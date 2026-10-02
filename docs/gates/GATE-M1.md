@@ -1,6 +1,8 @@
 # GATE M1 — Working loop (2026-10-02)
 
 ## Status
+**CLOSED by Ridha, 2026-10-02** ("M1 gate: close. Continue with M2."). External review: none.
+
 M1 is built and has run live on free models. Results are **exploratory** (D-018): builder-written seed tasks, one run, no confidence intervals.
 
 **Ridha decides:** close M1 and start M2 (learning) → M3 (Markdown armor pack)? Also: allow `api.groq.com` and `openrouter.ai` in Network access to get a second model family.
@@ -21,7 +23,7 @@ M1 is built and has run live on free models. Results are **exploratory** (D-018)
 - **224 tests** in total after the reviewer fixes. Without root/bwrap (CI, dev sandbox) the sandbox tests skip visibly and the fail-closed tests run.
 - Executor, evaluator and end-to-end tests **pass at L3** when run outside the dev sandbox (Q14 = b), keys stripped from the environment. Stable across 3 repeated runs.
 - Mutation checks (D-011): removing the ledger's write lock → race test fails (105 granted > 100); removing `--disable-userns` → namespace-escape test fails.
-- CI: green on every code push of M1.
+- CI: green on every code push of M1 up to the reviewer-fix commit `30e75b1`. **Correction (2026-10-02, next session):** CI has been red since that commit. The git-history secret scan flags a placeholder string quoted in this packet (finding 11), not a key. The red CI was missed at the gate. Details and options: Q22.
 
 ## 3. Live runs (exploratory, one run each; reports in `reports/runs/`)
 | Run | Models | Tasks | Result |
@@ -72,7 +74,7 @@ Reviewer: a fresh-context subagent that had not seen the build conversation. Rea
 8. **MED: the self-probe is weaker than the tests.** It doesn't check nested-userns blocking, a read-only `/usr`, capabilities or no-new-privs, or that the real limits apply. No seccomp filter. CI skips every L3 test.
 9. **LOW-MED: the timeout test can't see surviving children.** `killpg` only reaches bwrap's group; the sandbox has its own session. Nothing asserts that the run's processes are gone.
 10. **LOW-MED: `/tmp/aiws-exec` is a predictable path.** It is created with no owner or symlink check, so a local user could redirect root's writes and chowns.
-11. **LOW: placeholder strings in model code abort runs** (verified). Strings like `API_KEY = "your-api-key-here"`, `Bearer …` or a PEM header raise SecretLeak inside repair prompts, and nothing catches it.
+11. **LOW: placeholder strings in model code abort runs** (verified). Strings like an `API_KEY = "<placeholder>"` assignment, `Bearer …` or a PEM header raise SecretLeak inside repair prompts, and nothing catches it.
 12. **LOW: errors are truncated before redaction** (verified). A key near character 284 of an error message keeps 16 of its characters.
 13. **LOW: a malformed 200 response crashes the run.** JSONDecodeError and ValidationError are not ProviderErrors.
 14. **LOW: evaluator validation gaps.** Empty `hidden_inputs` passes any code; the manifest sha256 is not recomputed; expected files are re-read per request without a hash check; `EVALUATOR_VERSION` is set by hand; NaN expected values are accepted.
