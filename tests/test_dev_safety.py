@@ -94,8 +94,12 @@ def test_every_provider_key_is_unset_in_sandboxed_commands():
 @needs_git
 def test_nothing_tracked_under_protected_paths():
     tracked = _git("ls-files").stdout.splitlines()
+    assert tracked, "no tracked files: this check would pass vacuously"
     for path in PROTECTED:
-        assert not [t for t in tracked if t == path or t.startswith(path)], path
+        # Directory entries end with "/" and match by prefix; file entries match exactly
+        # (a bare prefix would wrongly flag .env.example under ".env").
+        hits = [t for t in tracked if (t.startswith(path) if path.endswith("/") else t == path)]
+        assert not hits, path
 
 
 # Patterns are split so this file does not match itself.
@@ -111,7 +115,9 @@ _SECRET_PATTERNS = [
 @needs_git
 def test_no_secret_like_strings_in_tracked_files():
     hits = []
-    for rel in _git("ls-files").stdout.splitlines():
+    tracked = _git("ls-files").stdout.splitlines()
+    assert tracked, "no tracked files: this check would pass vacuously"
+    for rel in tracked:
         p = ROOT / rel
         if not p.is_file() or p.stat().st_size > 2_000_000:
             continue

@@ -53,6 +53,9 @@ Running `detect_env.py` inside the dev sandbox reported `netns: BLOCKED` while t
 
 **D-010 · 2026-10-02 · Environment ≠ Ridha's PC.** PLAN Q1 asks about "the development machine". This session runs in a cloud container, which I measured. Ridha's PC is unknown. Asked as Q1 instead of assuming either. · PROPOSED
 
+**D-011 · 2026-10-02 · Two dev-safety tests passed vacuously.**
+CI (first run) failed `test_nothing_tracked_under_protected_paths`: the prefix check matched `.env.example` under `.env`. Locally it had passed only because nothing was tracked yet. → File entries now need an exact match, directory entries a prefix match. Both git-based tests now assert that the tracked-file list is non-empty. Lesson for later gates: a check over an empty set is not evidence. · BUILDER
+
 ---
 
 ## External review responses
