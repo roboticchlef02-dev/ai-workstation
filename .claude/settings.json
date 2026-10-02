@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Read(.env.local)",
+      "Read(.env.development)",
+      "Read(.env.production)",
+      "Read(.env.test)",
+      "Read(.env.secret)",
+      "Edit(.env)",
+      "Edit(.env.local)",
+      "Edit(.env.development)",
+      "Edit(.env.production)",
+      "Edit(.env.test)",
+      "Edit(.env.secret)",
+      "Read(./secrets/**)",
+      "Edit(./secrets/**)",
+      "Read(./benchmarks/held_out/**)",
+      "Edit(./benchmarks/held_out/**)"
+    ],
+    "ask": [
+      "Edit(./configs/protected_paths.txt)",
+      "Edit(./.claude/settings.json)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "filesystem": {
+      "denyRead": ["./.env", "./secrets", "./benchmarks/held_out"]
+    },
+    "credentials": {
+      "envVars": [
+        { "name": "ANTHROPIC_API_KEY", "mode": "deny" },
+        { "name": "OPENAI_API_KEY", "mode": "deny" },
+        { "name": "GEMINI_API_KEY", "mode": "deny" },
+        { "name": "GOOGLE_API_KEY", "mode": "deny" },
+        { "name": "DEEPSEEK_API_KEY", "mode": "deny" }
+      ]
+    },
+    "network": {
+      "allowedDomains": ["pypi.org", "files.pythonhosted.org", "github.com", "*.github.com"]
+    }
+  }
+}

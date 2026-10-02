@@ -1,0 +1,39 @@
+# --- Secrets (never commit) ---
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+
+# --- Held-out benchmark: never in git, never opened during development ---
+benchmarks/held_out/
+
+# --- Experiment state / results (decided per phase; see docs/QUESTIONS.md Q7) ---
+*.sqlite
+*.sqlite3
+*.db
+replay_cache/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Editors / OS ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Claude Code local overrides ---
+.claude/settings.local.json
