@@ -78,12 +78,14 @@ class Capabilities(BaseModel):
 
 
 class ProviderError(Exception):
-    """A call failed. `sent` says whether the request may have reached (and been billed by)
-    the provider: False = certainly not sent, True = sent, None = unknown."""
+    """A call failed. `billable`: False = certainly not billed (never sent, or rejected before
+    generation), True = billed, None = unknown. Unknown is charged as billed.
+    `retryable`: rate limit or transient server error; a retry, never a task failure (R9)."""
 
-    def __init__(self, message: str, *, sent: bool | None):
+    def __init__(self, message: str, *, billable: bool | None, retryable: bool = False):
         super().__init__(message)
-        self.sent = sent
+        self.billable = billable
+        self.retryable = retryable
 
 
 # Conservative input-token estimate for reservations: ~3 characters per token + overhead.

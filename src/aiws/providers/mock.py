@@ -44,7 +44,7 @@ class MockProvider(ModelProvider):
         if callable(self._script):
             return self._script(req)
         if not self._script:
-            raise ProviderError("mock script exhausted", sent=False)
+            raise ProviderError("mock script exhausted", billable=False)
         return self._script.pop(0)
 
     def _generate(self, req: GenerateRequest, sampling: dict[str, Any]) -> GenerateResponse:

@@ -52,11 +52,10 @@ class MeteredClient:
         try:
             resp = self.provider.generate(req)
         except BaseException as e:
-            sent = getattr(e, "sent", None)
-            if sent is False:
+            if getattr(e, "billable", None) is False:
                 self.ledger.release(rid)
                 shadow = billed = 0.0
-            else:  # sent or unknown: charge the worst case
+            else:  # billed or unknown: charge the worst case
                 shadow, billed = reserved, (reserved if paid else 0.0)
                 self.ledger.settle(rid, shadow_usd=shadow, billed_usd=billed)
             self._record(req, ctx, None, time.monotonic() - t0, reserved, shadow, billed, e)

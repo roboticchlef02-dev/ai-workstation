@@ -172,15 +172,15 @@ def test_secret_in_prompt_is_refused_before_dispatch(ledger, prices, telemetry):
 
 
 def test_failed_call_not_sent_releases_reservation(ledger, prices, telemetry):
-    m = MockProvider(model_id="priced-1", fail=ProviderError("refused locally", sent=False))
+    m = MockProvider(model_id="priced-1", fail=ProviderError("refused locally", billable=False))
     with pytest.raises(ProviderError):
         client(m, ledger, prices, telemetry).generate(req(model="priced-1"), CTX)
     assert ledger.committed_usd() == 0
 
 
-@pytest.mark.parametrize("sent", [True, None])
-def test_failed_call_possibly_billed_is_charged_worst_case(ledger, prices, telemetry, sent):
-    m = MockProvider(model_id="priced-1", fail=ProviderError("timeout", sent=sent))
+@pytest.mark.parametrize("billable", [True, None])
+def test_failed_call_possibly_billed_is_charged_worst_case(ledger, prices, telemetry, billable):
+    m = MockProvider(model_id="priced-1", fail=ProviderError("timeout", billable=billable))
     with pytest.raises(ProviderError):
         client(m, ledger, prices, telemetry).generate(req(model="priced-1"), CTX)
     assert ledger.committed_usd() > 0  # unknown outcome is charged at the reservation
@@ -210,7 +210,7 @@ def test_telemetry_records_required_call_fields(ledger, prices, telemetry):
 
 
 def test_failed_calls_are_recorded_too(ledger, prices, telemetry):
-    m = MockProvider(fail=ProviderError("boom", sent=None))
+    m = MockProvider(fail=ProviderError("boom", billable=None))
     with pytest.raises(ProviderError):
         client(m, ledger, prices, telemetry).generate(req(), CTX)
     (rec,) = telemetry.calls()
@@ -221,7 +221,7 @@ def test_telemetry_never_stores_secrets(tmp_path, monkeypatch, ledger, prices):
     monkeypatch.setenv("GEMINI_API_KEY", FAKE_KEY)
     t = Telemetry(tmp_path / "t.sqlite")
     # A provider error message that echoes the key must be redacted, not stored.
-    m = MockProvider(fail=ProviderError(f"401 for key {FAKE_KEY}", sent=True))
+    m = MockProvider(fail=ProviderError(f"401 for key {FAKE_KEY}", billable=True))
     with pytest.raises(ProviderError):
         client(m, ledger, prices, t).generate(req(), CTX)
     raw = sqlite3.connect(tmp_path / "t.sqlite").execute("SELECT * FROM calls").fetchall()
