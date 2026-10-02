@@ -1,0 +1,30 @@
+id: seed-greedy-03
+category: greedy
+difficulty: 4
+entry_point: min_intervals_to_cover
+signature: 'def min_intervals_to_cover(intervals: list[list[int]], L: int) -> int:'
+statement: Each interval [a, b] (a <= b) is closed and covers every real point from a to b. Choose the
+  fewest intervals whose union contains every point of [0, L] (L >= 0). Intervals that only touch, like
+  [0,2] and [2,5], together cover [0,5]. Return that number, or -1 if [0, L] cannot be covered. For L
+  = 0 you need one interval containing 0.
+visible_tests:
+- args:
+  - - - 0
+      - 2
+    - - 2
+      - 5
+    - - 1
+      - 3
+  - 5
+  expected: 2
+- args:
+  - - - 1
+      - 4
+  - 3
+  expected: -1
+- args:
+  - - - 0
+      - 0
+  - 0
+  expected: 1
+compare: exact

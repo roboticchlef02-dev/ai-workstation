@@ -1,0 +1,19 @@
+id: seed-num-05
+category: numerical
+difficulty: 3
+entry_point: next_greater_same_digits
+signature: 'def next_greater_same_digits(n: int) -> int:'
+statement: Return the smallest integer greater than `n` (a positive integer) that uses exactly the same
+  digits as `n` (same digits, same counts). Return -1 if no such integer exists or if it is larger than
+  2**31 - 1.
+visible_tests:
+- args:
+  - 12
+  expected: 21
+- args:
+  - 21
+  expected: -1
+- args:
+  - 534976
+  expected: 536479
+compare: exact

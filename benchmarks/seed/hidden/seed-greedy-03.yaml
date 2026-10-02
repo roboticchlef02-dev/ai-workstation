@@ -1,0 +1,66 @@
+id: seed-greedy-03
+hidden_inputs:
+- - - - 0
+      - 1
+    - - 2
+      - 3
+  - 3
+- - - - -5
+      - 10
+  - 7
+- - - - 0
+      - 3
+    - - 1
+      - 4
+    - - 3
+      - 6
+    - - 5
+      - 8
+    - - 0
+      - 8
+  - 8
+- - []
+  - 0
+- - - - 0
+      - 4
+    - - 0
+      - 2
+    - - 2
+      - 4
+  - 4
+- - - - 0
+      - 1
+    - - 1
+      - 2
+    - - 2
+      - 3
+    - - 3
+      - 4
+    - - 0
+      - 2
+    - - 2
+      - 4
+  - 4
+- - - - 3
+      - 5
+    - - 0
+      - 3
+  - 5
+- - - - 0
+      - 5
+  - 6
+reference_solution: |
+  def min_intervals_to_cover(intervals, L):
+      iv = sorted(intervals)
+      need, count, i = 0, 0, 0  # `need`: leftmost point of [0, L] not yet covered
+      while True:
+          best = None
+          while i < len(iv) and iv[i][0] <= need:
+              best = iv[i][1] if best is None else max(best, iv[i][1])
+              i += 1
+          if best is None or best < need or (count > 0 and best == need):
+              return -1
+          count += 1
+          if best >= L:
+              return count
+          need = best

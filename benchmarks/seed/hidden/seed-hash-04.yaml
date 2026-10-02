@@ -1,0 +1,31 @@
+id: seed-hash-04
+hidden_inputs:
+- - - abc
+    - abd
+    - abe
+- - - car
+    - cart
+    - carton
+- - - x
+    - y
+    - z
+- - - interview
+    - internet
+    - internal
+    - interval
+- - - ba
+    - b
+    - bab
+reference_solution: |
+  def shortest_unique_prefixes(words):
+      out = []
+      for w in words:
+          others = [o for o in words if o != w]
+          for k in range(1, len(w) + 1):
+              p = w[:k]
+              if not any(o.startswith(p) for o in others):
+                  out.append(p)
+                  break
+          else:
+              out.append(w)
+      return out

@@ -1,0 +1,22 @@
+id: seed-dp-04
+category: dynamic_programming
+difficulty: 4
+entry_point: wildcard_match
+signature: 'def wildcard_match(s: str, p: str) -> bool:'
+statement: Return True if the pattern `p` matches the whole string `s`. In the pattern, '?' matches exactly
+  one character and '*' matches any sequence of characters, including the empty one; every other character
+  matches itself.
+visible_tests:
+- args:
+  - aa
+  - a
+  expected: false
+- args:
+  - aa
+  - '*'
+  expected: true
+- args:
+  - adceb
+  - '*a*b'
+  expected: true
+compare: exact

@@ -1,0 +1,42 @@
+id: seed-str-04
+category: strings
+difficulty: 4
+entry_point: text_justify
+signature: 'def text_justify(words: list[str], width: int) -> list[str]:'
+statement: 'Fully justify text. Pack words greedily: each line takes as many words as fit with at least
+  one space between words. Every line must be exactly `width` characters. For every line except the last,
+  spread the spaces between words as evenly as possible; when they don''t divide evenly, the leftmost
+  gaps get one extra space. A line with a single word (not the last line) is left-justified and padded
+  with spaces on the right. The last line is left-justified with single spaces between words and padded
+  with spaces on the right. Every word is at most `width` long. An empty list gives an empty list.'
+visible_tests:
+- args:
+  - - This
+    - is
+    - an
+    - example
+    - of
+    - text
+    - justification.
+  - 16
+  expected:
+  - This    is    an
+  - example  of text
+  - 'justification.  '
+- args:
+  - - What
+    - must
+    - be
+    - acknowledgment
+    - shall
+    - be
+  - 16
+  expected:
+  - What   must   be
+  - 'acknowledgment  '
+  - 'shall be        '
+- args:
+  - []
+  - 5
+  expected: []
+compare: exact

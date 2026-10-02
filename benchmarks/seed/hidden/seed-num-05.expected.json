@@ -1,0 +1,1 @@
+{"id": "seed-num-05", "cases": [{"args": [1], "expected": -1}, {"args": [111], "expected": -1}, {"args": [1243], "expected": 1324}, {"args": [230241], "expected": 230412}, {"args": [2147483476], "expected": 2147483647}, {"args": [2147483486], "expected": -1}, {"args": [1999999999], "expected": -1}, {"args": [12443322], "expected": 13222344}, {"args": [101], "expected": 110}]}

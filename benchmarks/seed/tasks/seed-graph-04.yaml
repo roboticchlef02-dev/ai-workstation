@@ -1,0 +1,36 @@
+id: seed-graph-04
+category: graphs
+difficulty: 3
+entry_point: knight_min_moves
+signature: 'def knight_min_moves(n: int, start: list[int], end: list[int], blocked: list[list[int]]) ->
+  int:'
+statement: On an n x n board (rows and columns 0..n-1) a chess knight starts at `start` = [row, col].
+  It may never land on a cell listed in `blocked`. Return the minimum number of knight moves to reach
+  `end`, 0 if start equals end, or -1 if it is impossible (including when `end` is blocked). `start` is
+  never blocked.
+visible_tests:
+- args:
+  - 8
+  - - 0
+    - 0
+  - - 7
+    - 7
+  - []
+  expected: 6
+- args:
+  - 3
+  - - 0
+    - 0
+  - - 1
+    - 1
+  - []
+  expected: -1
+- args:
+  - 5
+  - - 0
+    - 0
+  - - 0
+    - 0
+  - []
+  expected: 0
+compare: exact

@@ -1,0 +1,61 @@
+id: seed-str-04
+hidden_inputs:
+- - - a
+  - 1
+- - - a
+    - b
+    - c
+    - d
+  - 3
+- - - Science
+    - is
+    - what
+    - we
+    - understand
+    - well
+    - enough
+    - to
+    - explain
+    - to
+    - a
+    - computer.
+    - Art
+    - is
+    - everything
+    - else
+    - we
+    - do
+  - 20
+- - - hello
+  - 10
+- - - ab
+    - cd
+    - ef
+    - gh
+  - 5
+- - - x
+    - yy
+    - zzz
+  - 6
+reference_solution: |
+  def text_justify(words, width):
+      lines, i = [], 0
+      while i < len(words):
+          j, length = i, 0
+          while j < len(words) and length + len(words[j]) + (j - i) <= width:
+              length += len(words[j])
+              j += 1
+          line = words[i:j]
+          if j == len(words) or len(line) == 1:
+              s = " ".join(line)
+              lines.append(s + " " * (width - len(s)))
+          else:
+              gaps = len(line) - 1
+              spaces = width - length
+              q, r = divmod(spaces, gaps)
+              s = ""
+              for k, w in enumerate(line[:-1]):
+                  s += w + " " * (q + (1 if k < r else 0))
+              lines.append(s + line[-1])
+          i = j
+      return lines

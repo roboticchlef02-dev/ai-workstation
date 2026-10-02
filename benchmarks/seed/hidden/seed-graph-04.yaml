@@ -1,0 +1,77 @@
+id: seed-graph-04
+hidden_inputs:
+- - 8
+  - - 0
+    - 0
+  - - 1
+    - 2
+  - []
+- - 8
+  - - 0
+    - 0
+  - - 1
+    - 2
+  - - - 1
+      - 2
+- - 8
+  - - 0
+    - 0
+  - - 2
+    - 1
+  - - - 1
+      - 2
+    - - 2
+      - 1
+- - 1
+  - - 0
+    - 0
+  - - 0
+    - 0
+  - []
+- - 4
+  - - 0
+    - 0
+  - - 3
+    - 3
+  - []
+- - 6
+  - - 0
+    - 0
+  - - 5
+    - 5
+  - - - 2
+      - 1
+    - - 1
+      - 2
+- - 10
+  - - 9
+    - 0
+  - - 0
+    - 9
+  - - - 5
+      - 5
+    - - 4
+      - 4
+    - - 6
+      - 6
+reference_solution: |
+  def knight_min_moves(n, start, end, blocked):
+      from collections import deque
+      bl = {tuple(b) for b in blocked}
+      s, e = tuple(start), tuple(end)
+      if e in bl:
+          return -1
+      if s == e:
+          return 0
+      dist = {s: 0}
+      q = deque([s])
+      while q:
+          r, c = q.popleft()
+          for dr, dc in ((1,2),(2,1),(-1,2),(-2,1),(1,-2),(2,-1),(-1,-2),(-2,-1)):
+              nr, nc = r + dr, c + dc
+              if 0 <= nr < n and 0 <= nc < n and (nr, nc) not in bl and (nr, nc) not in dist:
+                  dist[(nr, nc)] = dist[(r, c)] + 1
+                  if (nr, nc) == e:
+                      return dist[(nr, nc)]
+                  q.append((nr, nc))
+      return -1

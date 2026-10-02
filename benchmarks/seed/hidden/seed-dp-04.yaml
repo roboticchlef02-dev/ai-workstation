@@ -1,0 +1,35 @@
+id: seed-dp-04
+hidden_inputs:
+- - ''
+  - ''
+- - ''
+  - '*'
+- - ''
+  - '?'
+- - cb
+  - ?a
+- - acdcb
+  - a*c?b
+- - abcabczzzde
+  - '*abc???de*'
+- - aaaa
+  - '***a'
+- - mississippi
+  - m??*ss*?i*pi
+- - abc
+  - abc*
+- - ab
+  - '*?*?*'
+- - a
+  - aa
+reference_solution: |
+  def wildcard_match(s, p):
+      from functools import lru_cache
+      @lru_cache(maxsize=None)
+      def m(i, j):
+          if j == len(p):
+              return i == len(s)
+          if p[j] == "*":
+              return m(i, j + 1) or (i < len(s) and m(i + 1, j))
+          return i < len(s) and (p[j] == "?" or p[j] == s[i]) and m(i + 1, j + 1)
+      return m(0, 0)

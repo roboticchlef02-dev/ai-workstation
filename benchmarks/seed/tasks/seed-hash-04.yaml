@@ -1,0 +1,30 @@
+id: seed-hash-04
+category: hash_maps
+difficulty: 4
+entry_point: shortest_unique_prefixes
+signature: 'def shortest_unique_prefixes(words: list[str]) -> list[str]:'
+statement: '`words` holds distinct, non-empty lowercase words. For each word, in input order, return its
+  shortest prefix that is not also a prefix of any other word in the list. If no such prefix exists (the
+  word itself is a prefix of another word), return the whole word.'
+visible_tests:
+- args:
+  - - zebra
+    - dog
+    - duck
+    - dove
+  expected:
+  - z
+  - dog
+  - du
+  - dov
+- args:
+  - - a
+    - ab
+  expected:
+  - a
+  - ab
+- args:
+  - - solo
+  expected:
+  - s
+compare: exact

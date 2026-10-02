@@ -1,0 +1,29 @@
+id: seed-num-04
+category: numerical
+difficulty: 3
+entry_point: eval_rpn
+signature: 'def eval_rpn(tokens: list[str]) -> int:'
+statement: Evaluate an expression in reverse Polish notation. Tokens are integers (possibly negative,
+  like '-3') or one of the operators + - * /. Division between integers truncates toward zero, as in C
+  or Java (so -7 / 2 is -3, not -4). The input is always valid and never divides by zero.
+visible_tests:
+- args:
+  - - '2'
+    - '1'
+    - +
+    - '3'
+    - '*'
+  expected: 9
+- args:
+  - - '4'
+    - '13'
+    - '5'
+    - /
+    - +
+  expected: 6
+- args:
+  - - '-7'
+    - '2'
+    - /
+  expected: -3
+compare: exact

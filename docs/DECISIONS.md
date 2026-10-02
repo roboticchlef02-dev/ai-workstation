@@ -253,3 +253,6 @@ Ridha's original picture: structured Markdown files that give any AI superpowers
 | 13 | Malformed 200 response crashes | ACCEPT | Parsing errors → ProviderError (billing unknown) |
 | 14 | Evaluator validation gaps | ACCEPT | Build rejects empty hidden inputs and non-finite expected values; manifest digest recomputed; expected values loaded and hash-checked once at startup; evaluator code hash reported with every verdict |
 | 15 | Seed tasks at ceiling | ACCEPT | Add harder tasks and/or weaker models before drawing any conclusion. Reported to Ridha |
+
+**D-026 · 2026-10-02 · Seed benchmark v0.2: 10 harder tasks (reviewer #15).** · BUILDER
+The first Groq run (Qwen 3.8 27B + gpt-oss-20b) solved 27/27 in every arm: the seed tasks were at ceiling and could show no effect. Added 10 tasks (difficulty 3–4), each with precise, slightly unusual rules and a trap, e.g. truncating division in RPN, strict Roman numerals, full justification, an in-order teller queue, closed-interval covering with touching ends. All 30 new visible examples agree with the references; trap answers were also checked by hand. Builder-written, so the same caveats as D-025 apply. Seed v0.2 hash `2d679503cc90…`; runs record the hash, so v0.1 and v0.2 results are never mixed.

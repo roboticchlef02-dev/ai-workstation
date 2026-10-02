@@ -1,0 +1,22 @@
+id: seed-str-05
+category: strings
+difficulty: 4
+entry_point: roman_to_int_strict
+signature: 'def roman_to_int_strict(s: str) -> int:'
+statement: 'Return the value of `s` if it is a valid Roman numeral in standard form, otherwise -1. Standard
+  form uses only the uppercase letters I V X L C D M, represents a value from 1 to 3999, and is written
+  the usual way: thousands as M, MM or MMM; hundreds as C, CC, CCC, CD, D, DC, DCC, DCCC, CM; tens as
+  X, XX, XXX, XL, L, LX, LXX, LXXX, XC; ones as I, II, III, IV, V, VI, VII, VIII, IX; each part optional
+  but in that order. So ''IIII'', ''VV'', ''IC'', ''XM'', ''IL'', lowercase letters and the empty string
+  are all invalid.'
+visible_tests:
+- args:
+  - MCMXCIV
+  expected: 1994
+- args:
+  - IIII
+  expected: -1
+- args:
+  - LVIII
+  expected: 58
+compare: exact

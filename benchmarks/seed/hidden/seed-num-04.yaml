@@ -1,0 +1,53 @@
+id: seed-num-04
+hidden_inputs:
+- - - '10'
+    - '6'
+    - '9'
+    - '3'
+    - +
+    - '-11'
+    - '*'
+    - /
+    - '*'
+    - '17'
+    - +
+    - '5'
+    - +
+- - - '7'
+    - '-2'
+    - /
+- - - '-7'
+    - '-2'
+    - /
+- - - '1'
+    - '3'
+    - /
+- - - '-1'
+    - '3'
+    - /
+- - - '42'
+- - - '3'
+    - '-4'
+    - '-'
+    - '5'
+    - '*'
+- - - '-100'
+    - '7'
+    - /
+    - '2'
+    - /
+reference_solution: |
+  def eval_rpn(tokens):
+      st = []
+      for t in tokens:
+          if t in ("+", "-", "*", "/"):
+              b, a = st.pop(), st.pop()
+              if t == "+": st.append(a + b)
+              elif t == "-": st.append(a - b)
+              elif t == "*": st.append(a * b)
+              else:
+                  q = abs(a) // abs(b)
+                  st.append(q if (a >= 0) == (b >= 0) else -q)
+          else:
+              st.append(int(t))
+      return st[0]

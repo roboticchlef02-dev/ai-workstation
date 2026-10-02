@@ -1,0 +1,29 @@
+id: seed-arr-04
+category: arrays
+difficulty: 3
+entry_point: compress_ranges
+signature: 'def compress_ranges(nums: list[int]) -> str:'
+statement: '`nums` is sorted in strictly increasing order and may contain negative numbers. Describe it
+  as text: a run of 3 or more consecutive integers is written ''a..b''; shorter runs are written as their
+  numbers. Join all items with '','' (no spaces). An empty list gives ''''. Example: [1,2,3,5,6,8] ->
+  ''1..3,5,6,8''.'
+visible_tests:
+- args:
+  - - 1
+    - 2
+    - 3
+    - 5
+    - 6
+    - 8
+  expected: 1..3,5,6,8
+- args:
+  - []
+  expected: ''
+- args:
+  - - -3
+    - -2
+    - -1
+    - 0
+    - 4
+  expected: -3..0,4
+compare: exact

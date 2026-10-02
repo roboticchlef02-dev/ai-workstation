@@ -1,0 +1,26 @@
+id: seed-num-05
+hidden_inputs:
+- - 1
+- - 111
+- - 1243
+- - 230241
+- - 2147483476
+- - 2147483486
+- - 1999999999
+- - 12443322
+- - 101
+reference_solution: |
+  def next_greater_same_digits(n):
+      d = list(str(n))
+      i = len(d) - 2
+      while i >= 0 and d[i] >= d[i + 1]:
+          i -= 1
+      if i < 0:
+          return -1
+      j = len(d) - 1
+      while d[j] <= d[i]:
+          j -= 1
+      d[i], d[j] = d[j], d[i]
+      d[i + 1:] = reversed(d[i + 1:])
+      v = int("".join(d))
+      return v if v <= 2**31 - 1 else -1

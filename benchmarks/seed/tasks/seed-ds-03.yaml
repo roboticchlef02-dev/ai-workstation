@@ -1,0 +1,41 @@
+id: seed-ds-03
+category: data_structures
+difficulty: 4
+entry_point: teller_start_times
+signature: 'def teller_start_times(arrivals: list[int], durations: list[int], tellers: int) -> list[int]:'
+statement: 'Customer i arrives at time arrivals[i] (non-decreasing) and needs durations[i] (>= 1) time
+  units of service. There are `tellers` (>= 1) identical tellers. Customers are served strictly in index
+  order: customer i starts only after customer i-1 has started. A customer starts at the later of their
+  arrival time and the moment some teller is free; a teller becomes free at the moment its previous service
+  ends. Return the list of start times.'
+visible_tests:
+- args:
+  - - 0
+    - 0
+    - 0
+  - - 5
+    - 3
+    - 1
+  - 2
+  expected:
+  - 0
+  - 0
+  - 3
+- args:
+  - - 1
+    - 2
+    - 3
+  - - 1
+    - 1
+    - 1
+  - 1
+  expected:
+  - 1
+  - 2
+  - 3
+- args:
+  - []
+  - []
+  - 3
+  expected: []
+compare: exact
