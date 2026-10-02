@@ -227,6 +227,27 @@ def _token_totals(telemetry: Telemetry, run_id: str) -> dict[str, dict[str, int]
     return out
 
 
+def _hidden_totals(rows: list[dict[str, Any]]) -> tuple[int, int]:
+    passed = total = 0
+    for r in rows:
+        a, _, b = str(r.get("hidden", "")).partition("/")
+        if a.isdigit() and b.isdigit():
+            passed, total = passed + int(a), total + int(b)
+    return passed, total
+
+
+def rerender(run_dir: Path, state_dir: Path) -> Path:
+    """Rebuild report.md from a run's saved config and results (e.g. after a report change)."""
+    config = json.loads((run_dir / "config.json").read_text())
+    rows = [json.loads(x) for x in (run_dir / "results.jsonl").read_text().splitlines() if x]
+    tokens = _token_totals(Telemetry(state_dir / "telemetry.sqlite"), config["run_id"]) \
+        if (state_dir / "telemetry.sqlite").exists() else {}
+    done = len({r["task_id"] for r in rows})
+    aborted = "" if done == config["n_tasks"] else f"only {done} of {config['n_tasks']} tasks ran"
+    (run_dir / "report.md").write_text(render_report(config, rows, tokens, aborted, []))
+    return run_dir / "report.md"
+
+
 def arm_label(spec: str, models: list[str]) -> str:
     letter, idx = arm_parts(spec)
     short = [m.split("/")[-1] for m in models]
@@ -264,8 +285,9 @@ def render_report(config: dict[str, Any], rows: list[dict[str, Any]],
     if aborted:
         lines.append(f"- **Stopped early:** {aborted}")
     lines += ["", "## Results", "",
-              "| Arm | Solved | Pass rate | Model calls | Calls/task | Input tok | Output tok | "
-              "Shadow $ | Infra issues* |", "|---|---|---|---|---|---|---|---|---|"]
+              "| Arm | Solved | Pass rate | Hidden tests passed | Model calls | Calls/task | "
+              "Input tok | Output tok | Shadow $ | Infra issues* |",
+              "|---|---|---|---|---|---|---|---|---|---|"]
     rates = {}
     for arm in arms:
         rs = [r for r in by_arm.get(arm, []) if r["task_id"] in done]
@@ -276,11 +298,15 @@ def render_report(config: dict[str, Any], rows: list[dict[str, Any]],
         infra = sum(bool(r["eval_error"]) + bool(r["stopped"]) + r.get("provider_errors", 0)
                     for r in rs)
         tk = tokens.get(arm, {})
+        hp, ht = _hidden_totals(rs)
         lines.append(
-            f"| {arm_label(arm, models)} | {solved}/{n} | {solved / n:.0%} | {calls} | "
+            f"| {arm_label(arm, models)} | {solved}/{n} | {solved / n:.0%} | "
+            f"{hp}/{ht} ({hp / ht:.0%}) | {calls} | "
             f"{calls / n:.1f} | {tk.get('input', 0)} | {tk.get('output', 0)} | "
             f"{sum(r['shadow_usd'] for r in rs):.4f} | {infra} |"
-            if n else f"| {arm_label(arm, models)} | 0/0 | – | 0 | – | 0 | 0 | 0 | 0 |")
+            if n and ht else f"| {arm_label(arm, models)} | 0/0 | – | – | 0 | – | 0 | 0 | 0 | 0 |")
+    lines += ["", "Hidden tests passed: partial credit, summed over tasks (a task counts as solved "
+              "only if all its hidden tests pass)."]
     lines += ["", "\\* Infra issues: provider calls that failed after retries, budget stops and "
               "evaluator errors. Each one also counts as a fail in this table.",
               "Model calls exclude retried rate-limit errors. Wall time (in results.jsonl) "
@@ -319,7 +345,8 @@ def render_report(config: dict[str, Any], rows: list[dict[str, Any]],
 
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    ap.add_argument("--models", required=True, help="comma-separated provider:model specs")
+    ap.add_argument("--models", help="comma-separated provider:model specs")
+    ap.add_argument("--rerender", help="rebuild report.md for this run directory and exit")
     ap.add_argument("--arms", help="e.g. A1,C1,A2,C2,D (default: all arms for the given models)")
     ap.add_argument("--benchmark", default=str(ROOT / "benchmarks" / "seed"))
     ap.add_argument("--limit", type=int)
@@ -334,6 +361,11 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--out", default=str(ROOT / "reports" / "runs"))
     ap.add_argument("--state", default=str(ROOT / "state"))
     a = ap.parse_args(argv)
+    if a.rerender:
+        print(rerender(Path(a.rerender), Path(a.state)).read_text())
+        return
+    if not a.models:
+        ap.error("--models is required")
     try:
         r = run_experiment(
             models=a.models.split(","), arm_list=a.arms.split(",") if a.arms else None,
