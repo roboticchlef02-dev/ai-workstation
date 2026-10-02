@@ -18,13 +18,24 @@ M1 is built and has run live on free models. Results are **exploratory** (D-018)
 | Arms + runner | A single shot · C execute + repair (≤ 4 calls) · D two models, pick passing, cross-model repair (≤ 4 calls); per-task random arm order (A11); retry on rate limits (R9); Markdown report |
 
 ## 2. Tests
-- **193 tests** in total. Without root/bwrap (CI, dev sandbox) the sandbox tests skip visibly and the fail-closed tests run.
+- **224 tests** in total after the reviewer fixes. Without root/bwrap (CI, dev sandbox) the sandbox tests skip visibly and the fail-closed tests run.
 - Executor, evaluator and end-to-end tests **pass at L3** when run outside the dev sandbox (Q14 = b), keys stripped from the environment. Stable across 3 repeated runs.
 - Mutation checks (D-011): removing the ledger's write lock → race test fails (105 granted > 100); removing `--disable-userns` → namespace-escape test fails.
 - CI: green on every code push of M1.
 
-## 3. Live run
-_(filled in below when the run finishes)_
+## 3. Live runs (exploratory, one run each; reports in `reports/runs/`)
+| Run | Models | Tasks | Result |
+|---|---|---|---|
+| `…173038Z-s1` | Gemma 4 26B + 31B (Gemini API) | 3 of 9 hard (stopped: ~60 s/call) | all arms 3/3 |
+| `…173703Z-s2` | Qwen 3.8 27B + gpt-oss-20b (Groq) | 27 seed v0.1 | **every arm 27/27: ceiling** |
+| `…175214Z-s3` | allam-2-7b (Groq, weak 7B) | 27 seed v0.1 | A1 2/27, hidden tests 31/166 (19%) · **C1 3/27, hidden tests 53/166 (32%)** with 3.6× calls |
+| `…175544Z-s4` | Qwen 3.8 + gpt-oss-20b, arms A1 C1 A2 C2 D | 10 hard (v0.2) | 9–10/10 every arm; D 9/10 vs best single C1 10/10 |
+
+What this says (exploratory, n small, no CIs):
+1. The loop works end to end on real free models, with $0 real spend.
+2. **Weak model:** execute + repair raised the hidden-test pass share by 13 points; full solves barely moved. The model often can't fix what it's shown.
+3. **Mid models:** the tasks are too easy, even the hard ones; the remaining failure (strict Roman numerals) **passes the visible examples**, so repair never triggers. Verification is only as strong as the tests the workstation can run. That suggests a strategy for M2/M3: the workstation writes extra edge-case tests itself.
+4. D (two models) showed no gain over the best single model here.
 
 ## 4. Deviations from the plan
 - Milestones M1–M4 replace the phase order (Q13, D-018).
