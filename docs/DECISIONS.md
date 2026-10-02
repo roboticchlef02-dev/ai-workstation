@@ -203,3 +203,16 @@ Consequences:
 - **Network:** the cloud environment blocks every free provider tested except Gemini (api.groq.com, openrouter.ai, models.github.ai, api.mistral.ai, api.cerebras.ai, router.huggingface.co, integrate.api.nvidia.com, api.cloudflare.com, opencode.ai, api.together.xyz, api.sambanova.ai: proxy 403, probed 2026-10-02 without credentials). Ridha can allow hosts in the environment's Network access settings.
 - **Second model family** (R2, A9, cross-family validation) depends on Q15. Until then, Gemini-only results are exploratory.
 - **Honest expectation:** execute-and-repair and test-filtered sampling are the most reliable gains for weak models. Continual "learning" gains are the uncertain part the experiment measures. Weights don't change, so gains plateau. Strong models usually gain less on easy tasks (ceiling).
+
+**D-022 · 2026-10-02 · Portable knowledge ("armor the model wears") — Ridha's requirement.**
+What the workstation learns with one model (e.g. Big Pickle) must keep helping after a switch to another (DeepSeek, Opus…), without costing many tokens. Requirement: APPROVED (Ridha). Design below: PROPOSED (amends PLAN 6.8/6.9).
+- **Knowledge lives outside the model**, as model-neutral data: short verified lessons, strategies (DSL workflows), verification tools. Fits laws 2 and 3 unchanged.
+- **Two scopes.** `general`: about tasks and domains (pitfalls, verified patterns), validated by deterministic tests, not by a model. `model:<id>`: which model or strategy works for what.
+- **On a model switch**, general items stay ACTIVE and their usefulness is re-measured for the new model (on/off ablation); they are demoted *for that model only* if they hurt it. PLAN 6.8's "model change → UNVERIFIED until retested" then applies to model-scoped items only. Otherwise a switch would wipe the armor, which is the opposite of the requirement.
+- **Model-scoped stats** (bandit posteriors) warm-start a new model from a discounted pooled prior, so it doesn't start from zero.
+- **Token budget:** lesson ≤ ~40 tokens; ≤ K items; hard cap ~300 injected tokens per call (configurable); retrieval by task category/features. Strategies cost calls, not context. Report gain per extra token.
+- **New hypothesis H4 (transfer), proposed as A13:** knowledge learned on TRAIN with model X improves model Y (Y-warm vs Y-cold). Secondary and exploratory until M4.
+- **Honest risk:** a weak model's lessons may help a strong model little, or even distract it. H4 measures this; a null result is valid.
+
+**D-023 · 2026-10-02 · Free providers (Q15 "any free provider").**
+→ **OpenCode Zen** (OpenAI-compatible, `https://opencode.ai/zen/v1/chat/completions`; free models from several families, e.g. `big-pickle`, `deepseek-v4-flash-free`, `qwen3.6-plus-free`, `minimax-m3-free`; per web search 2026-10-02, list to confirm via `/zen/v1/models`) + **Gemini** free tier. One generic OpenAI-compatible provider also covers OpenRouter, Groq and local servers (Ollama, llama.cpp, LM Studio) for Ridha's PC. Model IDs are namespaced (`opencode/big-pickle`) so the same model name from two gateways never shares a price or stats entry. Free-model terms may allow training on prompts; acceptable for synthetic tasks. · BUILDER

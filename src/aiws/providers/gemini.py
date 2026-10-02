@@ -19,6 +19,7 @@ from aiws.providers.base import (
     ModelProvider,
     ProviderError,
     Usage,
+    http_error,
 )
 from aiws.secretguard import redact
 
@@ -81,22 +82,9 @@ class GeminiProvider(ModelProvider):
             del key
         latency = time.monotonic() - t0
         if r.status_code != 200:
-            raise self._http_error(r)
+            raise http_error(self.name, r)
         data = r.json()
         return self._parse(req, data, latency)
-
-    @staticmethod
-    def _http_error(r: httpx.Response) -> ProviderError:
-        try:
-            message = str(r.json().get("error", {}).get("message", ""))[:300]
-        except ValueError:
-            message = r.text[:300]
-        text = redact(f"gemini HTTP {r.status_code}: {message}")
-        if r.status_code == 429:
-            return ProviderError(text, billable=False, retryable=True)
-        if r.status_code >= 500:
-            return ProviderError(text, billable=None, retryable=True)
-        return ProviderError(text, billable=False)  # 4xx: rejected before generation
 
     def _parse(self, req: GenerateRequest, data: dict[str, Any],
                latency: float) -> GenerateResponse:

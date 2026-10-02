@@ -4,23 +4,8 @@ Each question gives why it matters and a **recommended default**. Answered quest
 
 ---
 
-### Q15. Which free providers? *(new)*
-**Why:** $0 budget (D-021). Cross-checking with a second model family is a core idea; today only Gemini works.
-**Default:** Gemini (have) + one of Groq / OpenRouter `:free` / GitHub Models / Mistral free tier (free tiers change; verify at sign-up). For each: key as an environment variable, and its host allowed in Network access.
-
-### Q16. Local models: where? *(new)*
-**Why:** this cloud container has no GPU (4 CPU, 16 GB), so only tiny models run here, slowly. Running on your PC changes the sandbox design (Windows → WSL2).
-**Default:** cloud + free APIs first; local later. Tell me your PC's OS, RAM, GPU.
-
-### Q17. "OpenCode": the agent app or its models? *(new)*
-**Default:** agent apps stay deferred (D-017). If its free models have a plain API, I use that. Strong models (Opus etc.) wait until after v0.1 (they need a paid API).
-
-### Q18. Coding first? *(new)*
-**Default: yes.** Python tasks with tests give automatic, trustworthy scoring. Reasoning/math later.
-
-### Q19. Time budget? *(new)*
-**Why:** free tiers limit requests per day, so time is the real budget.
-**Default:** runs may take hours or days, spread over sessions. I build resumable runs.
+### Q20. Your PC: OS, RAM, GPU (VRAM)? *(new)*
+**Why:** the workstation and local models will run there (Q16). The sandbox is Linux-only (bwrap); Windows needs WSL2. VRAM decides which local models fit.
 
 ---
 
@@ -43,4 +28,10 @@ Each question gives why it matters and a **recommended default**. Answered quest
 | Q13 | Yes: milestones M1→M4 (D-018). M1–M3 results are exploratory |
 | Q14 | Default (b): keep today's sandbox mode until the executor exists, then pick (a) or (c) |
 | — | No paid API keys, ever: $0 real budget, free/local models only (D-021) |
+| Q15 | Any free provider → builder picks OpenCode Zen (one key, several free model families) + Gemini (D-023) |
+| Q16 | Yes: the workstation and local models will run on Ridha's PC |
+| Q17 | OpenCode = its model gateway (Big Pickle, MiniMax, …), used through its API, not the agent app |
+| Q18 | Yes: Python coding first |
+| Q19 | Yes: long, resumable runs are fine |
+| — | New requirement: learned knowledge must carry over when the model changes, at low token cost (D-022) |
 | — | Claude (chat) review: skipped for Gate 0; ChatGPT only |

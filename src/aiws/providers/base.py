@@ -9,9 +9,11 @@ from abc import ABC, abstractmethod
 from datetime import date
 from typing import Any, Literal
 
+import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from aiws.prices import PriceTable
+from aiws.secretguard import redact
 
 
 class Message(BaseModel):
@@ -86,6 +88,21 @@ class ProviderError(Exception):
         super().__init__(message)
         self.billable = billable
         self.retryable = retryable
+
+
+def http_error(provider: str, r: httpx.Response) -> ProviderError:
+    """Classify a non-200 reply. 4xx: rejected before generation (not billed); 429 and 5xx:
+    retryable; 5xx billing unknown. Echoed keys are redacted from the message."""
+    try:
+        message = str(r.json().get("error", {}).get("message", ""))[:300]
+    except (ValueError, AttributeError):
+        message = r.text[:300]
+    text = redact(f"{provider} HTTP {r.status_code}: {message}")
+    if r.status_code == 429:
+        return ProviderError(text, billable=False, retryable=True)
+    if r.status_code >= 500:
+        return ProviderError(text, billable=None, retryable=True)
+    return ProviderError(text, billable=False)
 
 
 # Conservative input-token estimate for reservations: ~3 characters per token + overhead.

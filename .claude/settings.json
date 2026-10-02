@@ -44,6 +44,7 @@
         { "name": "OPENROUTER_API_KEY", "mode": "deny" },
         { "name": "GROQ_API_KEY", "mode": "deny" },
         { "name": "MISTRAL_API_KEY", "mode": "deny" },
+        { "name": "OPENCODE_API_KEY", "mode": "deny" },
         { "name": "GH_TOKEN", "mode": "deny" },
         { "name": "GITHUB_TOKEN", "mode": "deny" }
       ]

@@ -41,3 +41,15 @@ models:
         output_per_mtok: 0
         source: synthetic
         verified: true
+  opencode/big-pickle:
+    provider: opencode
+    notes: >-
+      OpenCode Zen free model (API name big-pickle). $0 list price, so shadow dollars can't
+      budget-match it; see D-021 (match on calls + tokens). Other free Zen models are added
+      after listing /zen/v1/models.
+    periods:
+      - valid_from: 2026-10-01
+        input_per_mtok: 0
+        output_per_mtok: 0
+        source: "web search 2026-10-02 (OpenCode Zen docs: free model)"
+        verified: false
