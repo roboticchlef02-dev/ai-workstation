@@ -1,0 +1,28 @@
+id: seed-dp-03
+category: dynamic_programming
+difficulty: 3
+entry_point: lis_length
+signature: 'def lis_length(nums: list[int]) -> int:'
+statement: Return the length of the longest strictly increasing subsequence of `nums` (elements in order,
+  not necessarily adjacent). An empty list gives 0.
+visible_tests:
+- args:
+  - - 10
+    - 9
+    - 2
+    - 5
+    - 3
+    - 7
+    - 101
+    - 18
+  expected: 4
+- args:
+  - - 7
+    - 7
+    - 7
+    - 7
+  expected: 1
+- args:
+  - []
+  expected: 0
+compare: exact

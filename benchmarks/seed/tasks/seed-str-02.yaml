@@ -1,0 +1,18 @@
+id: seed-str-02
+category: strings
+difficulty: 1
+entry_point: is_valid_brackets
+signature: 'def is_valid_brackets(s: str) -> bool:'
+statement: '`s` contains only the characters ()[]{}. Return True if every bracket is closed by the same
+  type of bracket in the correct order, otherwise False. The empty string is valid.'
+visible_tests:
+- args:
+  - ()[]{}
+  expected: true
+- args:
+  - (]
+  expected: false
+- args:
+  - ([)]
+  expected: false
+compare: exact

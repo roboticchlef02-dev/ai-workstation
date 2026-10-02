@@ -1,0 +1,24 @@
+id: seed-dp-02
+category: dynamic_programming
+difficulty: 2
+entry_point: coin_change_ways
+signature: 'def coin_change_ways(coins: list[int], amount: int) -> int:'
+statement: Return the number of different combinations of coins that add up to `amount`. You have an unlimited
+  number of each coin value; the order of coins does not matter. `coins` holds distinct positive integers.
+  For amount 0 the answer is 1.
+visible_tests:
+- args:
+  - - 1
+    - 2
+    - 5
+  - 5
+  expected: 4
+- args:
+  - - 2
+  - 3
+  expected: 0
+- args:
+  - - 10
+  - 0
+  expected: 1
+compare: exact

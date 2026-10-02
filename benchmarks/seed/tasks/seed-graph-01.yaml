@@ -1,0 +1,22 @@
+id: seed-graph-01
+category: graphs
+difficulty: 2
+entry_point: count_islands
+signature: 'def count_islands(grid: list[str]) -> int:'
+statement: '`grid` is a list of equal-length strings made of ''1'' (land) and ''0'' (water). An island
+  is a group of land cells connected horizontally or vertically (not diagonally). Return the number of
+  islands. An empty grid has 0 islands.'
+visible_tests:
+- args:
+  - - '11000'
+    - '11000'
+    - '00100'
+    - '00011'
+  expected: 3
+- args:
+  - []
+  expected: 0
+- args:
+  - - '1'
+  expected: 1
+compare: exact

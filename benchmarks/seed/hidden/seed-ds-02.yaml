@@ -1,0 +1,47 @@
+id: seed-ds-02
+hidden_inputs:
+- - - - push
+      - 3
+    - - push
+      - 1
+    - - push
+      - 2
+    - - min
+    - - pop
+    - - min
+    - - pop
+    - - min
+- - - - push
+      - 2
+    - - push
+      - 2
+    - - push
+      - 1
+    - - pop
+    - - min
+    - - pop
+    - - min
+- - - - push
+      - 0
+    - - push
+      - -1
+    - - push
+      - -1
+    - - pop
+    - - min
+    - - top
+reference_solution: |
+  def min_stack_ops(ops):
+      stack, mins, out = [], [], []
+      for op in ops:
+          if op[0] == "push":
+              stack.append(op[1])
+              mins.append(op[1] if not mins else min(op[1], mins[-1]))
+          elif op[0] == "pop":
+              stack.pop()
+              mins.pop()
+          elif op[0] == "top":
+              out.append(stack[-1])
+          else:
+              out.append(mins[-1])
+      return out

@@ -1,0 +1,24 @@
+id: seed-rec-01
+category: recursion
+difficulty: 2
+entry_point: permutations_sorted
+signature: 'def permutations_sorted(s: str) -> list[str]:'
+statement: 'Return all distinct permutations of the string `s` (which may contain repeated characters),
+  sorted in lexicographic order. The empty string has exactly one permutation: the empty string.'
+visible_tests:
+- args:
+  - ab
+  expected:
+  - ab
+  - ba
+- args:
+  - aab
+  expected:
+  - aab
+  - aba
+  - baa
+- args:
+  - ''
+  expected:
+  - ''
+compare: exact

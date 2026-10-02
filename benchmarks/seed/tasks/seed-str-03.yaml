@@ -1,0 +1,19 @@
+id: seed-str-03
+category: strings
+difficulty: 3
+entry_point: decode_string
+signature: 'def decode_string(s: str) -> str:'
+statement: 'Decode an encoded string. The rule is k[text]: the text inside the square brackets is repeated
+  exactly k times (k is a positive integer, possibly with several digits). Encodings can be nested. Letters
+  outside brackets are copied as they are. The input is always valid. Example: ''3[a2[c]]'' -> ''accaccacc''.'
+visible_tests:
+- args:
+  - 3[a2[c]]
+  expected: accaccacc
+- args:
+  - 2[abc]3[cd]ef
+  expected: abcabccdcdcdef
+- args:
+  - abc
+  expected: abc
+compare: exact

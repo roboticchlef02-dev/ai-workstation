@@ -1,0 +1,31 @@
+id: seed-hash-02
+category: hash_maps
+difficulty: 2
+entry_point: group_anagrams
+signature: 'def group_anagrams(words: list[str]) -> list[list[str]]:'
+statement: Group the words that are anagrams of each other (same letters, same counts). Keep duplicate
+  words. Sort the words inside each group alphabetically, then sort the groups by their first word. Return
+  the list of groups.
+visible_tests:
+- args:
+  - - eat
+    - tea
+    - tan
+    - ate
+    - nat
+    - bat
+  expected:
+  - - ate
+    - eat
+    - tea
+  - - bat
+  - - nat
+    - tan
+- args:
+  - []
+  expected: []
+- args:
+  - - a
+  expected:
+  - - a
+compare: exact

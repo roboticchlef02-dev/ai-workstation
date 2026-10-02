@@ -189,3 +189,22 @@ def build(root: Path | str, executor: SandboxExecutor, version: str) -> dict[str
     if problems:
         raise ValueError("benchmark build failed:\n" + "\n".join(problems))
     return write_manifest(root, version)
+
+
+def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Build a benchmark: compute hidden expected values.")
+    ap.add_argument("command", choices=["build", "verify"])
+    ap.add_argument("root")
+    ap.add_argument("--version", default="")
+    args = ap.parse_args()
+    if args.command == "build":
+        m = build(args.root, SandboxExecutor(), version=args.version or "unversioned")
+        print(f"built {len(load_tasks(args.root))} tasks, sha256 {m['sha256']}")
+    else:
+        print(f"ok, sha256 {verify_manifest(args.root)}")
+
+
+if __name__ == "__main__":
+    main()

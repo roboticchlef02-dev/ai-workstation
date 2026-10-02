@@ -1,0 +1,87 @@
+id: seed-ds-01
+hidden_inputs:
+- - 2
+  - - - put
+      - 1
+      - 1
+    - - put
+      - 2
+      - 2
+    - - put
+      - 1
+      - 10
+    - - put
+      - 3
+      - 3
+    - - get
+      - 1
+    - - get
+      - 2
+    - - get
+      - 3
+- - 2
+  - - - put
+      - 1
+      - 1
+    - - put
+      - 2
+      - 2
+    - - get
+      - 1
+    - - put
+      - 3
+      - 3
+    - - get
+      - 1
+    - - get
+      - 2
+- - 3
+  - - - put
+      - 1
+      - 1
+    - - put
+      - 2
+      - 2
+    - - put
+      - 3
+      - 3
+    - - get
+      - 2
+    - - put
+      - 4
+      - 4
+    - - get
+      - 1
+    - - get
+      - 3
+    - - get
+      - 4
+- - 1
+  - - - put
+      - 7
+      - 7
+    - - put
+      - 7
+      - 8
+    - - get
+      - 7
+reference_solution: |
+  def lru_simulate(capacity, ops):
+      from collections import OrderedDict
+      cache = OrderedDict()
+      out = []
+      for op in ops:
+          if op[0] == "get":
+              k = op[1]
+              if k in cache:
+                  cache.move_to_end(k)
+                  out.append(cache[k])
+              else:
+                  out.append(-1)
+          else:
+              k, v = op[1], op[2]
+              cache[k] = v
+              cache.move_to_end(k)
+              if len(cache) > capacity:
+                  cache.popitem(last=False)
+      return out

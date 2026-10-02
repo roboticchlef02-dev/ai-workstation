@@ -1,0 +1,26 @@
+id: seed-graph-03
+category: graphs
+difficulty: 3
+entry_point: can_finish
+signature: 'def can_finish(n: int, prereqs: list[list[int]]) -> bool:'
+statement: There are `n` courses numbered 0..n-1. Each pair [a, b] in `prereqs` means course b must be
+  taken before course a. Return True if all courses can be finished (the requirements contain no cycle),
+  otherwise False. A course that requires itself is a cycle.
+visible_tests:
+- args:
+  - 2
+  - - - 1
+      - 0
+  expected: true
+- args:
+  - 2
+  - - - 1
+      - 0
+    - - 0
+      - 1
+  expected: false
+- args:
+  - 1
+  - []
+  expected: true
+compare: exact

@@ -1,0 +1,1 @@
+{"id": "seed-dp-03", "cases": [{"args": [[0, 1, 0, 3, 2, 3]], "expected": 4}, {"args": [[1, 2, 3, 4, 5]], "expected": 5}, {"args": [[5, 4, 3, 2, 1]], "expected": 1}, {"args": [[3, 10, 2, 1, 20]], "expected": 3}, {"args": [[2, 2, 3, 3, 4, 4, 1]], "expected": 3}, {"args": [[-1, -5, 0, -4, 1, -3, 2]], "expected": 4}]}

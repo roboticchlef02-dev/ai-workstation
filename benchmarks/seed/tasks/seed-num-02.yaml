@@ -1,0 +1,17 @@
+id: seed-num-02
+category: numerical
+difficulty: 1
+entry_point: nth_prime
+signature: 'def nth_prime(n: int) -> int:'
+statement: Return the n-th prime number, counting from 1 (nth_prime(1) == 2). 1 <= n <= 10000.
+visible_tests:
+- args:
+  - 1
+  expected: 2
+- args:
+  - 5
+  expected: 11
+- args:
+  - 10
+  expected: 29
+compare: exact

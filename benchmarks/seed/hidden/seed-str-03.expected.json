@@ -1,0 +1,1 @@
+{"id": "seed-str-03", "cases": [{"args": ["10[a]"], "expected": "aaaaaaaaaa"}, {"args": ["2[2[2[b]]]"], "expected": "bbbbbbbb"}, {"args": ["x1[y]z"], "expected": "xyz"}, {"args": [""], "expected": ""}, {"args": ["3[z]2[2[y]pq4[2[jk]e1[f]]]ef"], "expected": "zzzyypqjkjkefjkjkefjkjkefjkjkefyypqjkjkefjkjkefjkjkefjkjkefef"}, {"args": ["a2[b3[c]]d"], "expected": "abcccbcccd"}]}

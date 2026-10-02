@@ -1,0 +1,18 @@
+id: seed-num-01
+category: numerical
+difficulty: 2
+entry_point: int_sqrt
+signature: 'def int_sqrt(n: int) -> int:'
+statement: Return the largest integer r with r * r <= n, for 0 <= n <= 10**18. The answer must be exact
+  for every n in that range.
+visible_tests:
+- args:
+  - 8
+  expected: 2
+- args:
+  - 0
+  expected: 0
+- args:
+  - 16
+  expected: 4
+compare: exact

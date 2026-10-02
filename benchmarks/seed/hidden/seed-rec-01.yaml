@@ -1,0 +1,12 @@
+id: seed-rec-01
+hidden_inputs:
+- - abc
+- - aabb
+- - z
+- - bca
+- - aaa
+- - abcd
+reference_solution: |
+  def permutations_sorted(s):
+      from itertools import permutations
+      return sorted(set("".join(p) for p in permutations(s)))

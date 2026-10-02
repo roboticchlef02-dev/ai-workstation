@@ -1,0 +1,27 @@
+id: seed-hash-02
+hidden_inputs:
+- - - ab
+    - ba
+    - ab
+- - - abc
+    - bca
+    - cab
+    - xyz
+    - zyx
+    - q
+- - - ''
+    - ''
+- - - listen
+    - silent
+    - enlist
+    - google
+    - gogole
+- - - b
+    - a
+    - c
+reference_solution: |
+  def group_anagrams(words):
+      groups = {}
+      for w in words:
+          groups.setdefault("".join(sorted(w)), []).append(w)
+      return sorted(sorted(g) for g in groups.values())

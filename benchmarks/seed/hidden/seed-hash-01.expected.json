@@ -1,0 +1,1 @@
+{"id": "seed-hash-01", "cases": [{"args": [""], "expected": -1}, {"args": ["z"], "expected": 0}, {"args": ["abcabcd"], "expected": 6}, {"args": ["aabbccdde"], "expected": 8}, {"args": ["xxyz"], "expected": 2}, {"args": ["abba"], "expected": -1}]}

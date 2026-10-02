@@ -1,0 +1,1 @@
+{"id": "seed-num-03", "cases": [{"args": ["2*3*4-5"], "expected": 19}, {"args": ["  42  "], "expected": 42}, {"args": ["(((7)))"], "expected": 7}, {"args": ["100 - (2 * (3 + 4)) * 5"], "expected": 30}, {"args": ["1-1-1-1"], "expected": -2}, {"args": ["2*(3+4)*(5-1)-(6-2*3)"], "expected": 56}, {"args": ["0*999+12-3*4"], "expected": 0}]}

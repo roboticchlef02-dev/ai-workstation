@@ -1,0 +1,22 @@
+id: seed-num-02
+hidden_inputs:
+- - 2
+- - 3
+- - 100
+- - 1000
+- - 10000
+- - 168
+reference_solution: |
+  def nth_prime(n):
+      limit = 120000
+      sieve = bytearray([1]) * (limit + 1)
+      sieve[0] = sieve[1] = 0
+      for i in range(2, int(limit ** 0.5) + 1):
+          if sieve[i]:
+              sieve[i * i::i] = bytearray(len(sieve[i * i::i]))
+      count = 0
+      for i in range(limit + 1):
+          if sieve[i]:
+              count += 1
+              if count == n:
+                  return i

@@ -1,0 +1,16 @@
+id: seed-hash-01
+hidden_inputs:
+- - ''
+- - z
+- - abcabcd
+- - aabbccdde
+- - xxyz
+- - abba
+reference_solution: |
+  def first_unique_char(s):
+      from collections import Counter
+      c = Counter(s)
+      for i, ch in enumerate(s):
+          if c[ch] == 1:
+              return i
+      return -1

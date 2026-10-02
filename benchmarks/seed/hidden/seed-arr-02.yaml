@@ -1,0 +1,32 @@
+id: seed-arr-02
+hidden_inputs:
+- - - 1
+  - 0
+- - - 1
+    - 2
+    - 3
+  - 3
+- - - 1
+    - 2
+    - 3
+  - 4
+- - - 7
+    - 8
+    - 9
+    - 10
+  - 102
+- - - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+  - 0
+- - - 9
+  - 1000000
+reference_solution: |
+  def rotate_right(nums, k):
+      if not nums:
+          return []
+      k %= len(nums)
+      return nums[-k:] + nums[:-k] if k else list(nums)

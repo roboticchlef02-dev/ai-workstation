@@ -1,0 +1,1 @@
+{"id": "seed-ds-02", "cases": [{"args": [[["push", 3], ["push", 1], ["push", 2], ["min"], ["pop"], ["min"], ["pop"], ["min"]]], "expected": [1, 1, 3]}, {"args": [[["push", 2], ["push", 2], ["push", 1], ["pop"], ["min"], ["pop"], ["min"]]], "expected": [2, 2]}, {"args": [[["push", 0], ["push", -1], ["push", -1], ["pop"], ["min"], ["top"]]], "expected": [-1, -1]}]}

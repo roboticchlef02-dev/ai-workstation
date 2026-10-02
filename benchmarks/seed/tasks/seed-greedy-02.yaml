@@ -1,0 +1,27 @@
+id: seed-greedy-02
+category: greedy
+difficulty: 2
+entry_point: min_jumps
+signature: 'def min_jumps(nums: list[int]) -> int:'
+statement: You start at index 0 of `nums` (non-negative integers, at least one element). From index i
+  you may jump forward by 1 to nums[i] positions. Return the minimum number of jumps needed to reach the
+  last index, or -1 if it cannot be reached. A list of length 1 needs 0 jumps.
+visible_tests:
+- args:
+  - - 2
+    - 3
+    - 1
+    - 1
+    - 4
+  expected: 2
+- args:
+  - - 3
+    - 2
+    - 1
+    - 0
+    - 4
+  expected: -1
+- args:
+  - - 0
+  expected: 0
+compare: exact

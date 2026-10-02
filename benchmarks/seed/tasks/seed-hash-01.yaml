@@ -1,0 +1,18 @@
+id: seed-hash-01
+category: hash_maps
+difficulty: 1
+entry_point: first_unique_char
+signature: 'def first_unique_char(s: str) -> int:'
+statement: Return the index of the first character in `s` that appears exactly once, or -1 if there is
+  none.
+visible_tests:
+- args:
+  - leetcode
+  expected: 0
+- args:
+  - loveleetcode
+  expected: 2
+- args:
+  - aabb
+  expected: -1
+compare: exact

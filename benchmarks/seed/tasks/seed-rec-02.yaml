@@ -1,0 +1,27 @@
+id: seed-rec-02
+category: recursion
+difficulty: 1
+entry_point: flatten
+signature: 'def flatten(nested: list) -> list[int]:'
+statement: '`nested` is a list whose elements are integers or lists of the same kind, nested to any depth.
+  Return all integers in left-to-right order as a flat list.'
+visible_tests:
+- args:
+  - - 1
+    - - 2
+      - - 3
+        - 4
+    - 5
+  expected:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+- args:
+  - []
+  expected: []
+- args:
+  - - - []
+  expected: []
+compare: exact

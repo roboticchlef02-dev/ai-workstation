@@ -1,0 +1,35 @@
+id: seed-greedy-01
+category: greedy
+difficulty: 2
+entry_point: min_platforms
+signature: 'def min_platforms(arrivals: list[int], departures: list[int]) -> int:'
+statement: 'Train i arrives at arrivals[i] and departs at departures[i] (arrivals[i] <= departures[i]).
+  A train occupies a platform from its arrival time to its departure time, inclusive at both ends: a train
+  arriving at the same time another departs needs a different platform. Return the minimum number of platforms
+  needed. No trains means 0.'
+visible_tests:
+- args:
+  - - 900
+    - 940
+    - 950
+    - 1100
+    - 1500
+    - 1800
+  - - 910
+    - 1200
+    - 1120
+    - 1130
+    - 1900
+    - 2000
+  expected: 3
+- args:
+  - - 100
+  - - 200
+  expected: 1
+- args:
+  - - 100
+    - 200
+  - - 200
+    - 300
+  expected: 2
+compare: exact

@@ -1,0 +1,54 @@
+id: seed-num-03
+hidden_inputs:
+- - 2*3*4-5
+- - '  42  '
+- - (((7)))
+- - 100 - (2 * (3 + 4)) * 5
+- - 1-1-1-1
+- - 2*(3+4)*(5-1)-(6-2*3)
+- - 0*999+12-3*4
+reference_solution: |
+  def evaluate_expression(expr):
+      tokens = []
+      i = 0
+      while i < len(expr):
+          c = expr[i]
+          if c.isspace():
+              i += 1
+          elif c.isdigit():
+              j = i
+              while j < len(expr) and expr[j].isdigit():
+                  j += 1
+              tokens.append(int(expr[i:j]))
+              i = j
+          else:
+              tokens.append(c)
+              i += 1
+      pos = 0
+      def peek():
+          return tokens[pos] if pos < len(tokens) else None
+      def take():
+          nonlocal pos
+          pos += 1
+          return tokens[pos - 1]
+      def atom():
+          t = take()
+          if t == "(":
+              v = expr_()
+              take()
+              return v
+          return t
+      def term():
+          v = atom()
+          while peek() == "*":
+              take()
+              v *= atom()
+          return v
+      def expr_():
+          v = term()
+          while peek() in ("+", "-"):
+              op = take()
+              r = term()
+              v = v + r if op == "+" else v - r
+          return v
+      return expr_()

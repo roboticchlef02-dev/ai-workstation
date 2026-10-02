@@ -1,0 +1,1 @@
+{"id": "seed-str-01", "cases": [{"args": ["aaaaaaaaaaaa"], "expected": "a12"}, {"args": ["aabbaa"], "expected": "a2b2a2"}, {"args": ["z"], "expected": "z"}, {"args": ["abbbbbbbbbbbc"], "expected": "ab11c"}, {"args": ["  x"], "expected": " 2x"}, {"args": ["AaAA"], "expected": "AaA2"}]}

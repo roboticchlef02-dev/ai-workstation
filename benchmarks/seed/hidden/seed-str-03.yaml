@@ -1,0 +1,24 @@
+id: seed-str-03
+hidden_inputs:
+- - 10[a]
+- - 2[2[2[b]]]
+- - x1[y]z
+- - ''
+- - 3[z]2[2[y]pq4[2[jk]e1[f]]]ef
+- - a2[b3[c]]d
+reference_solution: |
+  def decode_string(s):
+      stack = []
+      cur, num = "", 0
+      for ch in s:
+          if ch.isdigit():
+              num = num * 10 + int(ch)
+          elif ch == "[":
+              stack.append((cur, num))
+              cur, num = "", 0
+          elif ch == "]":
+              prev, k = stack.pop()
+              cur = prev + cur * k
+          else:
+              cur += ch
+      return cur

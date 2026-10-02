@@ -1,0 +1,40 @@
+id: seed-greedy-01
+hidden_inputs:
+- - []
+  - []
+- - - 100
+    - 100
+    - 100
+  - - 100
+    - 100
+    - 100
+- - - 100
+    - 300
+  - - 200
+    - 400
+- - - 100
+    - 150
+    - 190
+  - - 200
+    - 180
+    - 195
+- - - 500
+    - 100
+  - - 600
+    - 499
+- - - 1
+    - 2
+    - 3
+    - 4
+  - - 10
+    - 9
+    - 8
+    - 7
+reference_solution: |
+  def min_platforms(arrivals, departures):
+      events = sorted([(a, 0) for a in arrivals] + [(d, 1) for d in departures])
+      cur = best = 0
+      for _, kind in events:
+          cur += 1 if kind == 0 else -1
+          best = max(best, cur)
+      return best

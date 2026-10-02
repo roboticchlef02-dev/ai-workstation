@@ -1,0 +1,1 @@
+{"id": "seed-dp-01", "cases": [{"args": ["", ""], "expected": 0}, {"args": ["abc", "abc"], "expected": 0}, {"args": ["kitten", "sitting"], "expected": 3}, {"args": ["a", "b"], "expected": 1}, {"args": ["abcdef", "azced"], "expected": 3}, {"args": ["sunday", "saturday"], "expected": 3}, {"args": ["aaaa", "bbbbbb"], "expected": 6}]}

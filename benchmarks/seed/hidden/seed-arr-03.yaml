@@ -1,0 +1,36 @@
+id: seed-arr-03
+hidden_inputs:
+- - - 0
+    - 0
+- - - 0
+    - 4
+    - 5
+- - - 1
+    - 1
+    - 1
+    - 1
+- - - -2
+    - -3
+    - 4
+- - - 5
+    - 0
+    - 2
+    - 0
+- - - 10
+    - 10
+    - 10
+    - 10
+    - 10
+reference_solution: |
+  def product_except_self(nums):
+      n = len(nums)
+      out = [1] * n
+      left = 1
+      for i in range(n):
+          out[i] = left
+          left *= nums[i]
+      right = 1
+      for i in range(n - 1, -1, -1):
+          out[i] *= right
+          right *= nums[i]
+      return out

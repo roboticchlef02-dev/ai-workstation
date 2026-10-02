@@ -1,0 +1,21 @@
+id: seed-dp-01
+category: dynamic_programming
+difficulty: 2
+entry_point: edit_distance
+signature: 'def edit_distance(a: str, b: str) -> int:'
+statement: Return the minimum number of single-character insertions, deletions or substitutions needed
+  to turn string `a` into string `b`.
+visible_tests:
+- args:
+  - horse
+  - ros
+  expected: 3
+- args:
+  - ''
+  - abc
+  expected: 3
+- args:
+  - intention
+  - execution
+  expected: 5
+compare: exact

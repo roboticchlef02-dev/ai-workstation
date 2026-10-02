@@ -1,0 +1,19 @@
+id: seed-num-03
+category: numerical
+difficulty: 3
+entry_point: evaluate_expression
+signature: 'def evaluate_expression(expr: str) -> int:'
+statement: Evaluate an arithmetic expression made of non-negative integers, the operators + - * and parentheses,
+  and spaces. * binds tighter than + and -, and operators of equal precedence apply left to right. The
+  result is an integer. Do not use eval or exec.
+visible_tests:
+- args:
+  - 1 + 2 * 3
+  expected: 7
+- args:
+  - (1 + 2) * 3
+  expected: 9
+- args:
+  - 10 - 4 - 3
+  expected: 3
+compare: exact

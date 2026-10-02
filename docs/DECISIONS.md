@@ -226,3 +226,10 @@ Ridha's original picture: structured Markdown files that give any AI superpowers
 - Applies at M3 (memory). The M1 engine is unchanged.
 
 **Note · 2026-10-02 · How much proof.** M1–M3 already give a working tool plus a small, honest measurement. M4 (the full scientific experiment: 300 held-out tasks, statistics, days of free-tier calls) is decided after M3.
+
+**D-025 · 2026-10-02 · M1 seed benchmark, evaluator and executor choices.** · BUILDER
+- **Seed benchmark** `benchmarks/seed` (version `seed-0.1`, 27 Python tasks, 10 categories, difficulty 1–3): written by the builder (Claude). None of the solvers (Gemini, Groq, OpenRouter, OpenCode free models) is a Claude model, so the generator family differs from every solver (PLAN 5.5). Hidden expected values are computed by running the reference in the sandbox; all 81 hand-written visible examples agree with the references. **Not done for seed:** independent second solution, mutation check, human spot-check. Results on seed are exploratory only (D-018) and the seed set is never a held-out set.
+- **Expected values never enter the sandbox:** the harness only returns function outputs; comparison happens outside. Code under test can forge a result line, but only with values it computes itself (tested).
+- **Evaluator** is a separate process with a key-free environment; it refuses a benchmark whose files changed since build (manifest hash). It runs as the same OS user as the orchestrator; a separate identity (A10) is M4 work.
+- **Per-run sandbox uid** from a pool of 64 (200000–200063). One shared uid failed after about 13 back-to-back runs: the kernel releases a run's process count shortly after it ends. This also closes Gate 0 reviewer #8 (shared NPROC).
+- Executor and evaluator security tests run only outside the dev sandbox (Q14 = b). CI skips them visibly; the fail-closed tests run everywhere.

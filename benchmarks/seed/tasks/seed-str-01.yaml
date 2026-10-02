@@ -1,0 +1,19 @@
+id: seed-str-01
+category: strings
+difficulty: 1
+entry_point: compress
+signature: 'def compress(s: str) -> str:'
+statement: 'Run-length encode `s`: each maximal run of the same character becomes the character followed
+  by the run length, but the length is written only when it is greater than 1. Example: ''aaabcc'' ->
+  ''a3bc2''.'
+visible_tests:
+- args:
+  - aaabcc
+  expected: a3bc2
+- args:
+  - ''
+  expected: ''
+- args:
+  - abc
+  expected: abc
+compare: exact

@@ -1,0 +1,33 @@
+id: seed-arr-02
+category: arrays
+difficulty: 1
+entry_point: rotate_right
+signature: 'def rotate_right(nums: list[int], k: int) -> list[int]:'
+statement: Return a new list equal to `nums` rotated to the right by `k` steps (k >= 0; k may exceed the
+  length). An empty list stays empty.
+visible_tests:
+- args:
+  - - 1
+    - 2
+    - 3
+    - 4
+    - 5
+  - 2
+  expected:
+  - 4
+  - 5
+  - 1
+  - 2
+  - 3
+- args:
+  - - 1
+    - 2
+  - 5
+  expected:
+  - 2
+  - 1
+- args:
+  - []
+  - 3
+  expected: []
+compare: exact

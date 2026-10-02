@@ -1,0 +1,40 @@
+id: seed-ds-02
+category: data_structures
+difficulty: 2
+entry_point: min_stack_ops
+signature: 'def min_stack_ops(ops: list[list]) -> list[int]:'
+statement: Simulate a stack. Each op is ['push', x], ['pop'], ['top'] or ['min']. 'top' reports the top
+  value and 'min' reports the smallest value currently in the stack. Ops are always valid (no pop, top
+  or min on an empty stack). Return the reported values of the 'top' and 'min' ops, in order.
+visible_tests:
+- args:
+  - - - push
+      - -2
+    - - push
+      - 0
+    - - push
+      - -3
+    - - min
+    - - pop
+    - - top
+    - - min
+  expected:
+  - -3
+  - 0
+  - -2
+- args:
+  - - - push
+      - 5
+    - - top
+  expected:
+  - 5
+- args:
+  - - - push
+      - 1
+    - - push
+      - 1
+    - - pop
+    - - min
+  expected:
+  - 1
+compare: exact

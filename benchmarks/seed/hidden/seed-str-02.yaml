@@ -1,0 +1,21 @@
+id: seed-str-02
+hidden_inputs:
+- - ''
+- - '{[]}'
+- - ((
+- - ))
+- - '{[()()]}'
+- - ']'
+- - ([]{})[]
+- - '{{{{}}}'
+reference_solution: |
+  def is_valid_brackets(s):
+      pairs = {')': '(', ']': '[', '}': '{'}
+      stack = []
+      for c in s:
+          if c in pairs:
+              if not stack or stack.pop() != pairs[c]:
+                  return False
+          else:
+              stack.append(c)
+      return not stack

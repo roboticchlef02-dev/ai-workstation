@@ -1,0 +1,1 @@
+{"id": "seed-num-02", "cases": [{"args": [2], "expected": 3}, {"args": [3], "expected": 5}, {"args": [100], "expected": 541}, {"args": [1000], "expected": 7919}, {"args": [10000], "expected": 104729}, {"args": [168], "expected": 997}]}
