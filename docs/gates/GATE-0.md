@@ -1,5 +1,8 @@
 # GATE 0 — Foundation (2026-10-02)
 
+## ✅ GATE 0 CLOSED (2026-10-02)
+Ridha: Q11 yes, ChatGPT review only. Q9/Q10 applied, A8–A12 approved. Open for the next session: Q12 (free/subscription keys) and Q13 (re-scope into M1–M4 milestones). Resume from `docs/NEXT_SESSION.md`.
+
 ## 🔄 External review status (updated 2026-10-02)
 - **ChatGPT:** received (`docs/external_review/GATE-0-chatgpt.md`). Every point classified in `DECISIONS.md`: all accepted, A9 modified, strict-sandbox enforcement sequenced after Q8. Facts checked: Haiku 4.5 pricing and the sampling-parameter limits verified; Gemini pricing reported by secondary sources only.
 - **Claude (chat):** pending.

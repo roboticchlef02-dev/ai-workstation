@@ -1,0 +1,10 @@
+# Control-plane and safety files. Changes need Ridha's review.
+# Only enforced once branch protection on `main` requires code-owner review (see docs/NEXT_SESSION.md).
+/CLAUDE.md                   @roboticchlef02-dev
+/PLAN.md                     @roboticchlef02-dev
+/.claude/                    @roboticchlef02-dev
+/.github/                    @roboticchlef02-dev
+/.gitignore                  @roboticchlef02-dev
+/configs/                    @roboticchlef02-dev
+/tests/test_dev_safety.py    @roboticchlef02-dev
+/tests/conftest.py           @roboticchlef02-dev

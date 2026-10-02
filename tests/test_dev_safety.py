@@ -6,6 +6,7 @@ protected paths are passed to `git check-ignore` as strings, never read.
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import re
 import shutil
@@ -34,13 +35,14 @@ def _git(*args: str) -> subprocess.CompletedProcess:
 
 
 def test_protected_paths_listed():
-    assert {".env", "secrets/", "benchmarks/held_out/"} <= set(PROTECTED)
+    assert {".env*", "secrets/", "benchmarks/held_out/"} <= set(PROTECTED)
 
 
 @needs_git
 @pytest.mark.parametrize("path", PROTECTED)
 def test_protected_path_is_git_ignored(path):
-    probe = path + "probe.txt" if path.endswith("/") else path
+    probe = path.replace("*", ".local")
+    probe = probe + "probe.txt" if probe.endswith("/") else probe
     assert _git("check-ignore", "-q", probe).returncode == 0, f"{path} not ignored"
 
 
@@ -63,7 +65,7 @@ def test_non_directory_forms_are_git_ignored(name):
 
 @needs_git
 def test_env_example_is_not_ignored():
-    assert _git("check-ignore", "-q", ".env.example").returncode != 0
+    assert _git("check-ignore", "-q", "env.example").returncode != 0
 
 
 @pytest.mark.parametrize("path", PROTECTED)
@@ -76,26 +78,41 @@ def test_protected_path_denied_for_read_and_edit(path):
 @pytest.mark.parametrize("path", PROTECTED)
 def test_protected_path_denied_in_os_sandbox(path):
     assert SANDBOX["enabled"] is True
-    assert f"./{path.rstrip('/')}" in SANDBOX["filesystem"]["denyRead"]
+    # Wildcard entries are also pinned by their concrete root path (Linux expands globs
+    # only to files that exist when settings load).
+    assert f"./{path.rstrip('/').rstrip('*')}" in SANDBOX["filesystem"]["denyRead"]
 
 
-def test_env_example_not_blocked_by_wildcard():
-    # Regression: Read(.env.*) + Read(!.env.example) made the sandbox deny .env.example
-    # on Linux, because the negation is not carved out when globs are expanded.
-    assert not any(r.startswith("Read(.env.*") or r.startswith("Read(!") for r in DENY)
+def test_template_does_not_collide_with_env_deny():
+    # Q9: the template is `env.example` (no dot) so `.env*` can be denied everywhere.
+    # Regression: Read(.env.*) + Read(!.env.example) denied the template itself on Linux.
+    assert (ROOT / "env.example").is_file()
+    assert not (ROOT / ".env.example").exists()
+    assert not any(r.startswith("Read(!") for r in DENY)
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["./CLAUDE.md", "./.gitignore", "./configs/protected_paths.txt", "./.github",
+     "./tests/test_dev_safety.py", "./tests/conftest.py"],
+)
+def test_safety_files_not_writable_from_sandboxed_bash(path):
+    # Q10: the builder can't weaken its own rules from Bash; Edit-tool changes need approval.
+    assert path in SANDBOX["filesystem"]["denyWrite"]
+    assert f"Edit({path})" in SETTINGS["permissions"]["ask"] or f"Edit({path}/**)" in SETTINGS["permissions"]["ask"]
 
 
 def test_env_example_has_no_values_for_secrets():
-    for line in (ROOT / ".env.example").read_text().splitlines():
+    for line in (ROOT / "env.example").read_text().splitlines():
         m = re.match(r"^([A-Z0-9_]+)=(.*)$", line.strip())
         if m and re.search(r"(KEY|TOKEN|SECRET)$", m.group(1)):
-            assert m.group(2) == "", f"{m.group(1)} must be empty in .env.example"
+            assert m.group(2) == "", f"{m.group(1)} must be empty in env.example"
 
 
 def test_every_provider_key_is_unset_in_sandboxed_commands():
     names = {
         m.group(1)
-        for line in (ROOT / ".env.example").read_text().splitlines()
+        for line in (ROOT / "env.example").read_text().splitlines()
         if (m := re.match(r"^([A-Z0-9_]+_API_KEY)=", line))
     }
     denied = {e["name"] for e in SANDBOX["credentials"]["envVars"] if e["mode"] == "deny"}
@@ -109,7 +126,11 @@ def test_nothing_tracked_under_protected_paths():
     for path in PROTECTED:
         # Directory entries end with "/" and match by prefix; file entries match exactly
         # (a bare prefix would wrongly flag .env.example under ".env").
-        hits = [t for t in tracked if (t.startswith(path) if path.endswith("/") else t == path)]
+        hits = [
+            t for t in tracked
+            if (t.startswith(path) if path.endswith("/")
+                else fnmatch.fnmatch(Path(t).name, path))  # file patterns match at any depth
+        ]
         assert not hits, path
 
 

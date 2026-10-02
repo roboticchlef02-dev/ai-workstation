@@ -2,6 +2,6 @@
 # One repo-relative path per line. Directories end with "/".
 # tests/test_dev_safety.py checks that every entry here is git-ignored and denied in .claude/settings.json.
 # Changing this file is a Control-plane change: human only.
-.env
+.env*
 secrets/
 benchmarks/held_out/

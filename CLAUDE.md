@@ -11,7 +11,7 @@ You are building **AI Workstation v0.1**: a model-agnostic experimental environm
 6. **Everything important is versioned** (models, strategies, memories, prompts, evaluator, benchmark, experiments).
 
 ## Safety while you develop
-- Never read, print, log, or ask for API keys or `.env*` files. Use environment variables; ship `.env.example` only. Add secrets paths to `.gitignore` on day one.
+- Never read, print, log, or ask for API keys or `.env*` files. Use environment variables; ship `env.example` only (renamed from `.env.example` so `.env*` can be denied at every depth; Ridha, Q9, 2026-10-02). Add secrets paths to `.gitignore` on day one.
 - Never open files under `benchmarks/held_out/` or any path listed in `configs/protected_paths.txt` during development, except through the evaluator's own tests with synthetic fixtures.
 - Configure Claude Code permissions to deny reading `.env*`, `secrets/` and `benchmarks/held_out/`, and use its filesystem/network sandboxing if your version supports it. Check the current Claude Code docs for exact settings syntax; do not guess.
 - Do not run any command that calls a paid API without `--confirm-spend`, a printed cost estimate, and a total under `MAX_RUN_COST_USD` (default 5). Prefer the mock/replay provider for tests.

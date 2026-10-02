@@ -2,40 +2,50 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "deny": [
-      "Read(.env)",
-      "Read(.env.local)",
-      "Read(.env.development)",
-      "Read(.env.production)",
-      "Read(.env.test)",
-      "Read(.env.secret)",
-      "Edit(.env)",
-      "Edit(.env.local)",
-      "Edit(.env.development)",
-      "Edit(.env.production)",
-      "Edit(.env.test)",
-      "Edit(.env.secret)",
+      "Read(.env*)",
+      "Edit(.env*)",
       "Read(./secrets/**)",
       "Edit(./secrets/**)",
       "Read(./benchmarks/held_out/**)",
       "Edit(./benchmarks/held_out/**)"
     ],
     "ask": [
+      "Edit(./.claude/settings.json)",
+      "Edit(./CLAUDE.md)",
+      "Edit(./.gitignore)",
       "Edit(./configs/protected_paths.txt)",
-      "Edit(./.claude/settings.json)"
+      "Edit(./.github/**)",
+      "Edit(./tests/test_dev_safety.py)",
+      "Edit(./tests/conftest.py)"
     ]
   },
   "sandbox": {
     "enabled": true,
     "filesystem": {
-      "denyRead": ["./.env", "./secrets", "./benchmarks/held_out"]
+      "denyRead": ["./.env", "./secrets", "./benchmarks/held_out"],
+      "denyWrite": [
+        "./CLAUDE.md",
+        "./.gitignore",
+        "./configs/protected_paths.txt",
+        "./.github",
+        "./tests/test_dev_safety.py",
+        "./tests/conftest.py"
+      ]
     },
     "credentials": {
       "envVars": [
         { "name": "ANTHROPIC_API_KEY", "mode": "deny" },
+        { "name": "ANTHROPIC_AUTH_TOKEN", "mode": "deny" },
         { "name": "OPENAI_API_KEY", "mode": "deny" },
         { "name": "GEMINI_API_KEY", "mode": "deny" },
         { "name": "GOOGLE_API_KEY", "mode": "deny" },
-        { "name": "DEEPSEEK_API_KEY", "mode": "deny" }
+        { "name": "GOOGLE_APPLICATION_CREDENTIALS", "mode": "deny" },
+        { "name": "DEEPSEEK_API_KEY", "mode": "deny" },
+        { "name": "OPENROUTER_API_KEY", "mode": "deny" },
+        { "name": "GROQ_API_KEY", "mode": "deny" },
+        { "name": "MISTRAL_API_KEY", "mode": "deny" },
+        { "name": "GH_TOKEN", "mode": "deny" },
+        { "name": "GITHUB_TOKEN", "mode": "deny" }
       ]
     },
     "network": {

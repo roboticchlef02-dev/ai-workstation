@@ -1,9 +1,7 @@
 # --- Secrets (never commit) ---
 # No trailing slashes: also covers files and symlinks with these names.
-.env
-.env.*
-.envrc
-!.env.example
+# Every .env* at any depth. The template is `env.example` (no leading dot, Q9).
+.env*
 secrets
 *.pem
 *.key

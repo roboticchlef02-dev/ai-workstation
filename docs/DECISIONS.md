@@ -28,7 +28,7 @@ Per the handoff, these count as approved once Ridha hands over the file, which R
 The prompt says to read "ChatGPT's accompanying handoff". Only `CLAUDE.md`, `PLAN.md` and `HANDOFF_FROM_CLAUDE.md` were provided. → Proceeded with those three; nothing in Phase 0 depends on the missing file. Asked in Q6. · **Resolved after Gate 0:** Ridha supplied it, stored as `docs/handoffs/HANDOFF_FROM_CHATGPT.md`. Read in full. Its three threats map to A1–A3 (already logged). Everything else in it repeats `CLAUDE.md`/`PLAN.md` (laws, gate protocol, reviewer instructions, spend rule). **No missed requirement found.**
 
 **D-002 · 2026-10-02 · `.env` deny rules: explicit names, not wildcard + negation.**
-First config used `Read(.env.*)` + `Read(!.env.example)`. The resolved OS sandbox config showed `.env.example` **denied**, and `cat .env.example` returned *Permission denied*: on Linux the glob expands to existing files, and the negation is not carved out at that layer. → Deny `.env`, `.env.local`, `.env.development`, `.env.production`, `.env.test`, `.env.secret` by name. `.gitignore` still ignores all `.env.*` except `.env.example`. Regression test added. · Risk: an unusual name (e.g. `.env.staging`, `.env.bak`, `.envrc`) or a nested `configs/.env.local` is git-ignored but not read-denied. · **Reclassified PROPOSED after the Gate 0 reviewer:** this narrows CLAUDE.md's "deny `.env*`" rule, and CLAUDE.md outranks everything, so it needs Ridha's decision (Q9) rather than a builder call.
+First config used `Read(.env.*)` + `Read(!.env.example)`. The resolved OS sandbox config showed `.env.example` **denied**, and `cat .env.example` returned *Permission denied*: on Linux the glob expands to existing files, and the negation is not carved out at that layer. → Deny `.env`, `.env.local`, `.env.development`, `.env.production`, `.env.test`, `.env.secret` by name. `.gitignore` still ignores all `.env.*` except `.env.example`. Regression test added. · Risk: an unusual name (e.g. `.env.staging`, `.env.bak`, `.envrc`) or a nested `configs/.env.local` is git-ignored but not read-denied. · **Resolved by Q9 (2026-10-02):** template renamed to `env.example`; `Read/Edit(.env*)` denied at every depth. History: this narrows CLAUDE.md's "deny `.env*`" rule, and CLAUDE.md outranks everything, so it needs Ridha's decision (Q9) rather than a builder call.
 
 **D-003 · 2026-10-02 · Provider keys are unset in Claude Code's sandboxed commands.**
 → `sandbox.credentials.envVars` denies all provider key names. Any live API call from the builder therefore needs an explicit, approved unsandboxed command, in addition to `--confirm-spend`. · Consequence: intended friction; mock/replay remains the default. · BUILDER
@@ -51,7 +51,7 @@ Running `detect_env.py` inside the dev sandbox reported `netns: BLOCKED` while t
 - arXiv 2601.09667 (MATTRL): exists. Experience-pool retrieval at test time confirmed from summaries. The "pools drift / stale heuristics" claim is **unverified**.
 - Everything the handoff labels "reported by ChatGPT": **unverified**.
 
-**D-010 · 2026-10-02 · Environment ≠ Ridha's PC.** PLAN Q1 asks about "the development machine". This session runs in a cloud container, which I measured. Ridha's PC is unknown. Asked as Q1 instead of assuming either. · PROPOSED
+**D-010 · 2026-10-02 · Environment ≠ Ridha's PC.** PLAN Q1 asks about "the development machine". This session runs in a cloud container, which I measured. Ridha's PC is unknown. Asked as Q1 instead of assuming either. · APPROVED (Q1: cloud environment)
 
 **D-011 · 2026-10-02 · Two dev-safety tests passed vacuously.**
 CI (first run) failed `test_nothing_tracked_under_protected_paths`: the prefix check matched `.env.example` under `.env`. Locally it had passed only because nothing was tracked yet. → File entries now need an exact match, directory entries a prefix match. Both git-based tests now assert that the tracked-file list is non-empty. Lesson for later gates: a check over an empty set is not evidence. · BUILDER
@@ -127,17 +127,42 @@ No points rejected. One modification (A9) and one sequencing deferral (R6).
 
 With the named candidates, a call (~2k in / 1k out) costs **~$0.007 on Haiku 4.5** and **~$0.005 on Gemini 3.8 Flash** (~$0.01 after the 2027 price change). My Gate 0 "cheap tier" assumed ~$0.003. ~29k calls → **~$170–230**, before A9 baseline tuning, the CONTROL set and repeats. Thinking/reasoning tokens would add more. **Low confidence** until the pilot. Gate 3 decides: raise the ceiling, or shrink pools/arms (e.g. HELD-OUT 300 → 200 lowers power; see A4). → Q3 updated.
 
-### Proposed amendments (binding only after Ridha confirms, Q11)
+### Amendments A8–A12 — approved by Ridha (Q11 yes, 2026-10-02)
 
 | ID | Amendment | Applies at | Status |
 |---|---|---|---|
-| A8 | H1 := "The adaptive workstation improves verified task outcomes over the strongest simple non-learning baseline." No claim that H1 isolates collaboration or verification | Prereg | PROPOSED |
-| A9 | B = fixed heterogeneous best-of-N (mixture, N, selection rule chosen on VALIDATION, frozen; no repair). C's model chosen on VALIDATION from either family. Strongest of A/B/C is the baseline | Phase 4 / prereg | PROPOSED (modified from ChatGPT) |
-| A10 | Evaluator under a separate identity/sandbox; HELD-OUT returns the minimum permitted result; held-out results never enter the learning/memory pipeline | Phase 2/4 | PROPOSED |
-| A11 | Per-task randomized balanced arm order (preregistered seed); CONTROL/SENTINEL set replaces PILOT reuse; drift signal = pass rate + provider metadata | Phase 3/9 | PROPOSED |
-| A12 | Per-provider sampling config; log requested + effective parameters and response metadata | Phase 1 | PROPOSED |
+| A8 | H1 := "The adaptive workstation improves verified task outcomes over the strongest simple non-learning baseline." No claim that H1 isolates collaboration or verification | Prereg | APPROVED (Q11) |
+| A9 | B = fixed heterogeneous best-of-N (mixture, N, selection rule chosen on VALIDATION, frozen; no repair). C's model chosen on VALIDATION from either family. Strongest of A/B/C is the baseline | Phase 4 / prereg | APPROVED (Q11, 2026-10-02) — builder's modified version |
+| A10 | Evaluator under a separate identity/sandbox; HELD-OUT returns the minimum permitted result; held-out results never enter the learning/memory pipeline | Phase 2/4 | APPROVED (Q11, 2026-10-02) |
+| A11 | Per-task randomized balanced arm order (preregistered seed); CONTROL/SENTINEL set replaces PILOT reuse; drift signal = pass rate + provider metadata | Phase 3/9 | APPROVED (Q11, 2026-10-02) |
+| A12 | Per-provider sampling config; log requested + effective parameters and response metadata | Phase 1 | APPROVED (Q11, 2026-10-02) |
 
 ---
 
 ## External review responses
 (Claude (chat) Gate 0 review: pending.)
+
+## After Gate 0 (Ridha: Q11 yes; free/subscription models; budget-tight)
+
+**Gate 0 closed 2026-10-02.** Applied: Q9 (`env.example`, `.env*` denied everywhere), Q10 (sandbox `denyWrite` + `ask` on safety files, CODEOWNERS, more credential names unset), A8–A12 approved. Ridha's actions still open: setup script (Q8) and branch protection (see `docs/NEXT_SESSION.md`). Strict sandbox (`allowUnsandboxedCommands:false`, `failIfUnavailable:true`) waits until a fresh session shows the setup script works.
+
+**D-016 · Cost unit = list-price dollars ("shadow cost"), whatever is actually billed.** Ridha may use free tiers or subscriptions, where billed cost ≈ $0. That would break dollar budget-matching (PLAN 5.3) and the spend caps. → Every call is charged its list price from the dated `configs/prices.yaml`; budget matching and caps use that number. Actual billed spend, tokens and calls are reported separately. · Keeps the comparison meaningful at $0 real spend. · PROPOSED (default, Q12)
+
+**D-017 · Allowed access types.**
+- (1) Paid API keys: yes.
+- (2) Free-tier API keys (e.g. Gemini AI Studio): yes, with caveats:
+  - ~10 requests/min and a few hundred/day, so long wall-clock runs
+  - prompts may be used for training, which doesn't matter for synthetic tasks
+  - record `billing_tier` on every call
+- (3) Subscription chat apps (ChatGPT/Claude web): **no**. There is no official programmatic access, and terms risk.
+- (4) Subscription agent CLIs (Claude Code `-p`, Codex, Gemini CLI): **not in v0.1**. They are agents with their own prompts and tools (a confound), they run commands on the host (a security issue), and their versions can't be pinned. Possible later as a separate provider type.
+
+· PROPOSED (Q12)
+
+**D-018 · Re-scope into small working milestones (budget-tight).** The 10-phase plan only produces a result at the end. → Proposed milestones, each ending in something that runs and a short gate:
+- **M1 Working loop:** provider interface + mock/replay + 1–2 real providers (free tier OK), shadow-cost ledger, L3 sandbox executor (security tests first), evaluator process, ~40-task seed benchmark, arms A/C/D, auto report. ≈ PLAN phases 1, 2, 4 and a thin slice of 3 and 5.
+- **M2 Learning:** experience log + per-category strategy selection (bandit), warm vs cold at small scale.
+- **M3 Memory:** lessons with provenance/quarantine (PLAN phase 6).
+- **M4 Real experiment:** full benchmark (300 held-out), prereg, A1/A9/A11, stats.
+
+Laws, sandbox and secrets rules are unchanged from M1. **Validity rule:** M1–M3 results are labeled *exploratory* and never count as H1/H2 evidence. The true held-out set is generated fresh at M4 and never touched before. · Changes PLAN's phase order → PROPOSED (Q13)
