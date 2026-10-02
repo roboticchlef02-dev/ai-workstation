@@ -1,6 +1,6 @@
 # Next session — start here
 
-**State (2026-10-02, end of session b):** Gate 0 closed. Q12 = yes, Q13 = yes → working in milestones (D-018). **M1 in progress.** Branch `claude/vibrant-bardeen-b9y49d`, CI green on the first M1 push; later pushes not yet checked.
+**State (2026-10-02, end of session b):** Gate 0 closed. Q12 = yes, Q13 = yes → working in milestones (D-018). **M1 in progress.** Branch `claude/vibrant-bardeen-b9y49d`, CI green on every M1 code push (through `87cf0f0`).
 
 ## Verified this session
 - Setup script works: bwrap 0.9.0, socat, setpriv, deps installed. `detect_env.py` outside the dev sandbox → **L3**.
@@ -24,7 +24,7 @@
 > Read CLAUDE.md, docs/NEXT_SESSION.md, docs/QUESTIONS.md and the end of docs/DECISIONS.md. Q14 = …. Continue M1. Stop when the conversation gets long, and update docs/NEXT_SESSION.md before stopping.
 
 ## Builder checklist for the next session
-1. Check CI on the last push (`87cf0f0`); fix if red.
+1. Check CI on the latest push (docs-only since `87cf0f0`, which was green).
 2. **Confirm the Gemini model ID and prices** before any live call: list models (free, no tokens) with an approved unsandboxed command, then fix `configs/prices.yaml` (`verified`) and the provider default. Then one live smoke test only with Ridha's go-ahead: `pytest -m live --confirm-spend tests/test_gemini.py`.
 3. **L3 executor**, security tests first (D-005, D-012, Gate 0 Phase 2 list):
    - refuses to run below L3 (fail closed)
