@@ -17,17 +17,17 @@
 | OpenAI-compatible provider: OpenCode Zen, OpenRouter, Groq, local Ollama/llama.cpp/LM Studio (offline tests) | `src/aiws/providers/openai_compat.py`, `tests/test_openai_compat.py` |
 
 ## Ridha: open items
-1. **OpenCode Zen key:** create a free API key on opencode.ai (Zen). Add it as environment variable `OPENCODE_API_KEY`, and add `opencode.ai` to Network access → allowed domains (environment menu → Edit). Then start a new session.
-2. **Q20:** your PC's OS, RAM and GPU (VRAM).
+1. **Network access** (environment menu → Edit → Network access → allowed domains): add `api.groq.com` and `openrouter.ai` (keys already added), plus `opencode.ai` if you add an OpenCode key (`OPENCODE_API_KEY`, optional). Then start a new session.
+2. **Q21:** knowledge as Markdown files (default yes).
 3. Still open from before: branch protection for `main` (optional).
 
 ## Prompt to paste into the next session
-> Read CLAUDE.md, docs/NEXT_SESSION.md, docs/QUESTIONS.md and the end of docs/DECISIONS.md. Q20 = …. OpenCode key added: yes/no. Continue M1. Stop when the conversation gets long, and update docs/NEXT_SESSION.md before stopping.
+> Read CLAUDE.md, docs/NEXT_SESSION.md, docs/QUESTIONS.md and the end of docs/DECISIONS.md. Q21 = …. Network access updated: yes/no. Continue M1. Stop when the conversation gets long, and update docs/NEXT_SESSION.md before stopping.
 
 ## Builder checklist for the next session
 1. Check CI on the latest push.
-2. **Verify `OPENCODE_API_KEY` is unset inside sandboxed commands** (names only). The deny entry was added this session, but couldn't be observed without the key.
-3. **List free models** (Zen `/zen/v1/models`, Gemini models list; no tokens spent) with approved unsandboxed commands. Add the chosen free models to `configs/prices.yaml`.
+2. Keys observed this session: Gemini, Groq, OpenRouter set, and hidden inside sandboxed commands. If an OpenCode key appears, verify the same (names only).
+3. **List free models** (Groq, OpenRouter `:free`, Zen `/zen/v1/models`, Gemini; no tokens spent) with approved unsandboxed commands. Add the chosen free models to `configs/prices.yaml`.
 4. **Confirm the Gemini model ID and prices** before any live call: list models (free, no tokens) with an approved unsandboxed command, then fix `configs/prices.yaml` (`verified`) and the provider default. Then one live smoke test only with Ridha's go-ahead: `pytest -m live --confirm-spend tests/test_gemini.py`.
 5. **L3 executor**, security tests first (D-005, D-012, Gate 0 Phase 2 list):
    - refuses to run below L3 (fail closed)

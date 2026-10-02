@@ -216,3 +216,13 @@ What the workstation learns with one model (e.g. Big Pickle) must keep helping a
 
 **D-023 · 2026-10-02 · Free providers (Q15 "any free provider").**
 → **OpenCode Zen** (OpenAI-compatible, `https://opencode.ai/zen/v1/chat/completions`; free models from several families, e.g. `big-pickle`, `deepseek-v4-flash-free`, `qwen3.6-plus-free`, `minimax-m3-free`; per web search 2026-10-02, list to confirm via `/zen/v1/models`) + **Gemini** free tier. One generic OpenAI-compatible provider also covers OpenRouter, Groq and local servers (Ollama, llama.cpp, LM Studio) for Ridha's PC. Model IDs are namespaced (`opencode/big-pickle`) so the same model name from two gateways never shares a price or stats entry. Free-model terms may allow training on prompts; acceptable for synthetic tasks. · BUILDER
+
+**D-024 · 2026-10-02 · Learned knowledge as Markdown files, the "armor pack". PROPOSED (Q21).**
+Ridha's original picture: structured Markdown files that give any AI superpowers.
+- Lessons and strategies live as Markdown files under `armor/`, each with a small YAML header: id, scope (`general` / `model:<id>`), category, confidence, status, evidence links, source model, content hash. Versioned in git (law 6).
+- Any AI tool can load them: OpenCode's AGENTS.md, Claude Code skills, a chat paste. Model-neutral by construction (D-022).
+- **Why the Python engine is still needed:** Markdown alone can't run the model's code against tests, record evidence, keep wrong lessons out, or check that the files help rather than hurt. Execute-and-repair is also the biggest single gain for weak models, and it needs code. The engine writes and checks the files; SQLite keeps logs and telemetry only.
+- Safety unchanged: inside the workstation the files are reference data, never instructions. A lesson needs test evidence before it becomes ACTIVE; quarantined files are excluded. If Ridha pastes them into another tool, that is his choice outside the workstation.
+- Applies at M3 (memory). The M1 engine is unchanged.
+
+**Note · 2026-10-02 · How much proof.** M1–M3 already give a working tool plus a small, honest measurement. M4 (the full scientific experiment: 300 held-out tasks, statistics, days of free-tier calls) is decided after M3.
