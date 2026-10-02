@@ -1,0 +1,10 @@
+# M1 arm C: the strong simple baseline (PLAN 5.2). Default strategy for "cold" (D-027).
+id: repair
+version: 1
+description: One model solves; on visible-example failures it repairs the best code so far, up to 3 times.
+max_calls: 4
+steps:
+  - {op: CALL_MODEL, model: m1, template: solve}
+  - {op: VERIFY, tests: visible}
+  - {op: REPAIR, rounds: 3, model: same, template: repair}
+  - {op: FINALIZE}

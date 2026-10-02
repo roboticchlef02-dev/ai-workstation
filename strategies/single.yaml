@@ -1,0 +1,9 @@
+# M1 arm A: one call, no execution feedback.
+id: single
+version: 1
+description: One attempt by one model. The visible examples are run only to report them.
+max_calls: 1
+steps:
+  - {op: CALL_MODEL, model: m1, template: solve}
+  - {op: VERIFY, tests: visible}
+  - {op: FINALIZE}

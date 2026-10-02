@@ -1,0 +1,14 @@
+# D-027: the model writes extra edge-case tests from the statement alone (no code shown).
+# Visible examples stay the hard gate; generated tests are a soft signal that may be wrong.
+id: selftest
+version: 1
+description: Solve and repair once on visible failures; then write edge-case tests and repair once more against them.
+max_calls: 4
+steps:
+  - {op: CALL_MODEL, model: m1, template: solve}
+  - {op: VERIFY, tests: visible}
+  - {op: REPAIR, rounds: 1, model: same, template: repair}
+  - {op: CALL_MODEL, model: m1, template: edge_tests}
+  - {op: VERIFY, tests: visible+generated}
+  - {op: REPAIR, rounds: 1, model: same, template: repair_generated}
+  - {op: FINALIZE}

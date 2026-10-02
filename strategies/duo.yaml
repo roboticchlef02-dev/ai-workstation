@@ -1,0 +1,13 @@
+# M1 arm D: two models solve independently; the other model repairs the best candidate.
+id: duo
+version: 1
+description: Two models solve independently; the best by visible examples is repaired by the other model, up to 2 times.
+max_calls: 4
+steps:
+  - op: PARALLEL
+    calls:
+      - {op: CALL_MODEL, model: m1, template: solve}
+      - {op: CALL_MODEL, model: m2, template: solve}
+  - {op: VERIFY, tests: visible}
+  - {op: REPAIR, rounds: 2, model: other, template: repair}
+  - {op: FINALIZE}

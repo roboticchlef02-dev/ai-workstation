@@ -35,6 +35,7 @@ from aiws.prices import PriceTable
 from aiws.providers.base import GenerateRequest, Message, ModelProvider
 from aiws.secretguard import assert_no_secret, redact
 from aiws.telemetry import Telemetry
+from aiws.templates import template_hashes
 
 ROOT = Path(__file__).resolve().parents[2]
 ARM_MAX_CALLS = {"A": lambda r: 1, "C": lambda r: 1 + r, "D": lambda r: 2 + r}  # by letter
@@ -164,6 +165,7 @@ def run_experiment(*, models: list[str], arm_list: list[str] | None, benchmark: 
                   "evaluator_version": info["evaluator_version"],
                   "evaluator_code_sha256": info["evaluator_code_sha256"],
                   "template_version": arms_mod.TEMPLATE_VERSION,
+                  "template_hashes": template_hashes(), "strategies": arms_mod.ARM_STRATEGY,
                   "isolation_level": ex.isolation_level(), "estimate_usd": round(est, 4),
                   "fingerprint": fingerprint(),
                   "started": datetime.now(timezone.utc).isoformat(), "n_tasks": len(tasks)}
@@ -191,6 +193,7 @@ def run_experiment(*, models: list[str], arm_list: list[str] | None, benchmark: 
                            "failure": verdict.get("failure", ""),
                            "visible_pass": o.visible_pass, "model_calls": o.model_calls,
                            "rounds_used": o.rounds_used, "winner_model": o.winner_model,
+                           "strategy": o.strategy_id,
                            "shadow_usd": round(ledger.committed_usd(task=(run_id, spec, task.id))
                                                - spent0, 6),
                            "wall_s": round(time.monotonic() - t0, 2), "stopped": o.stopped,
