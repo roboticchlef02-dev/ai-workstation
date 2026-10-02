@@ -5,7 +5,7 @@ An environment that wraps free (or any) AI models with verification, repair, col
 - Rules: [`CLAUDE.md`](CLAUDE.md) · Plan: [`PLAN.md`](PLAN.md) · Decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) · Open questions: [`docs/QUESTIONS.md`](docs/QUESTIONS.md)
 - Gate packets: [`docs/gates/`](docs/gates/) · Environment: [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) · Run reports: [`reports/runs/`](reports/runs/)
 
-**Status:** M1 (working loop). Exploratory results only (D-018).
+**Status:** M1 closed; M2 (learning) in progress. Exploratory results only (D-018).
 
 ## How it works (M1)
 1. A **task** (statement + visible examples) goes to one or two models.
@@ -26,3 +26,13 @@ python -m aiws.run --models gemini:gemma-4-26b-a4b-it,gemini:gemma-4-31b-it \
 ```
 
 Model specs: `gemini:<model>`, `groq:<model>`, `openrouter:<model>`, `opencode:<model>`, `local:<model>[@url]`. Keys come from environment variables (`GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `OPENCODE_API_KEY`); see `env.example`. Every model needs an entry in `configs/prices.yaml` (unknown models are refused).
+
+## Learning (M2)
+Strategies are YAML data in [`strategies/`](strategies/) (DSL v0, D-027): `single`, `repair`, `duo` (M1's arms A, C, D) and `selftest` (the model writes edge-case tests; visible examples stay the hard gate). A per-category Thompson-sampling selector learns which strategy and model to use from TRAIN tasks, then is frozen and compared with the cold default (`repair`) on EVAL tasks:
+
+```bash
+python -m aiws.learn --models groq:allam-2-7b --strategies single,repair,selftest \
+                     --per-task 2 --max-output-tokens 2048 --confirm-spend
+```
+
+Reports land in `reports/runs/<run_id>/report.md`; the experience log is `state/experience.sqlite` (TRAIN rows only).

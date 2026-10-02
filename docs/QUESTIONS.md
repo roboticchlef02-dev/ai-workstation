@@ -10,7 +10,7 @@ Each question gives why it matters and a **recommended default**. Answered quest
 - (a) Exempt exactly that value in the history scan by its sha256 (`e25f45c3…`), with a test showing other values of the same pattern are still caught. Small, auditable.
 - (b) Rewrite history on the branches to drop the string (force-push). Destructive; affects every clone.
 - (c) Scan only the current tree plus commits after `30e75b1`. Weaker: an old leak would go unseen.
-**Recommended default: (a).** Until you answer, CI stays red for this one reason; the other tests pass.
+**Recommended default: (a).** Update: CI is green again since the text fix (CI checks out only the latest commit, whose tree is clean). The test still fails on a full clone (local runs, and `--all` also scans other branches), so it is less urgent but still open.
 
 ---
 
