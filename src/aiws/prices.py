@@ -87,7 +87,11 @@ class PriceTable:
         return cls(version=str(data["version"]), models=models)
 
     def period(self, model_id: str, on: date) -> PricePeriod:
-        for p in self.models.get(model_id, []):
+        """Exact model entry first, then a `<namespace>/*` entry (e.g. `local/*`)."""
+        periods = self.models.get(model_id)
+        if periods is None and "/" in model_id:
+            periods = self.models.get(model_id.split("/", 1)[0] + "/*")
+        for p in periods or []:
             if p.covers(on):
                 return p
         raise UnknownModel(f"no list price for {model_id!r} on {on.isoformat()}")

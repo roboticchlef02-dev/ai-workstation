@@ -312,3 +312,14 @@ def test_preflight_refuses_estimate_over_global_remaining(ledger):
 def test_preflight_ok_returns_printable_estimate(ledger):
     msg = budget.spend_preflight(0.42, confirm_spend=True, caps=caps(), ledger=ledger)
     assert "$0.42" in msg and "$2.00" in msg
+
+
+def test_namespace_wildcard_price(tmp_path):
+    data = yaml.safe_load(yaml.safe_dump(PRICES))
+    data["models"]["local/*"] = {"provider": "local", "periods": [
+        {"valid_from": "2026-01-01", "input_per_mtok": 0, "output_per_mtok": 0,
+         "source": "t", "verified": True}]}
+    t = PriceTable.load(write_prices(tmp_path, data))
+    assert t.cost_microusd("local/qwen2.5-coder:1.5b", 100, 100, on=date(2026, 10, 2)) == 0
+    with pytest.raises(UnknownModel):
+        t.cost_microusd("remote/x", 1, 1, on=date(2026, 10, 2))  # no wildcard for remote/

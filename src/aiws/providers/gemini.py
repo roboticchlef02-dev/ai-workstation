@@ -32,11 +32,12 @@ class GeminiProvider(ModelProvider):
     name = "gemini"
 
     def __init__(self, *, model_id: str, billing_tier: Literal["free", "paid"],
-                 key_env: str = "GEMINI_API_KEY", client: httpx.Client | None = None,
-                 timeout_s: float = 180.0):
+                 key_env: str = "GEMINI_API_KEY", api_model: str | None = None,
+                 client: httpx.Client | None = None, timeout_s: float = 180.0):
         if billing_tier not in ("free", "paid"):
             raise ValueError("billing_tier must be 'free' or 'paid' (recorded on every call)")
         self.model_id, self.billing_tier, self._key_env = model_id, billing_tier, key_env
+        self.api_model = api_model or model_id  # our IDs are namespaced: gemini/<api model>
         self._client = client or httpx.Client()
         self._timeout = timeout_s
 
@@ -66,7 +67,7 @@ class GeminiProvider(ModelProvider):
         key = os.environ.get(self._key_env, "")
         if not key:
             raise ProviderError(f"{self._key_env} is not set", billable=False)
-        url = f"{BASE_URL}/models/{self.model_id}:generateContent"
+        url = f"{BASE_URL}/models/{self.api_model}:generateContent"
         t0 = time.monotonic()
         try:
             r = self._client.post(url, json=self._body(req, sampling), timeout=self._timeout,

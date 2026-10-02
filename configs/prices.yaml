@@ -15,7 +15,7 @@ models:
         output_per_mtok: 5.00
         source: "Claude API skill model table (cached 2026-09-25); docs/DECISIONS.md fact check"
         verified: true
-  gemini-3.8-flash:
+  gemini/gemini-3.8-flash:
     provider: gemini
     notes: >-
       Exact API model ID and prices still to confirm against Google's models list and
@@ -53,3 +53,12 @@ models:
         output_per_mtok: 0
         source: "web search 2026-10-02 (OpenCode Zen docs: free model)"
         verified: false
+  local/*:
+    provider: local
+    notes: "Any model served on this machine (Ollama, llama.cpp, LM Studio). No list price."
+    periods:
+      - valid_from: 2026-10-01
+        input_per_mtok: 0
+        output_per_mtok: 0
+        source: "local inference has no per-token price"
+        verified: true
