@@ -16,9 +16,11 @@ disables execution (fail closed). The level actually enforced is returned with e
 
 from __future__ import annotations
 
+import itertools
 import json
 import math
 import os
+import random
 import resource
 import shutil
 import signal
@@ -31,7 +33,11 @@ from pathlib import Path, PurePosixPath
 
 from aiws.secretguard import CHILD_ENV_ALLOWED, child_env
 
-SANDBOX_UID = 65534  # "nobody"
+# Each run gets its own unprivileged uid from this pool (no host account uses them).
+# Why a pool: the kernel releases a run's process count shortly *after* the run ends, so
+# back-to-back runs on one uid hit RLIMIT_NPROC ("Can't fork"). A per-run uid also keeps
+# concurrent runs from sharing a process budget (Gate 0 reviewer #8).
+SANDBOX_UIDS = range(200_000, 200_064)
 # Inside the sandbox: our allowlist, plus PWD (set by bwrap --chdir) and LC_CTYPE (Python).
 SANDBOX_ENV_ALLOWED = CHILD_ENV_ALLOWED | {"PWD", "LC_CTYPE"}
 _REPO_ROOT = str(Path(__file__).resolve().parents[2])
@@ -76,7 +82,7 @@ print(json.dumps({{"uid": os.getuid(), "ifaces": ifaces,
 class SandboxExecutor:
     def __init__(self, *, limits: ExecLimits = ExecLimits(), bwrap: str | None = None,
                  setpriv: str | None = None, python: str | None = None,
-                 base_dir: str | Path = "/tmp/aiws-exec", sandbox_uid: int = SANDBOX_UID,
+                 base_dir: str | Path = "/tmp/aiws-exec", uid_pool: range = SANDBOX_UIDS,
                  probe_timeout_s: float = 15.0):
         self.limits = limits
         self.bwrap = bwrap or shutil.which("bwrap") or "/usr/bin/bwrap"
@@ -91,7 +97,10 @@ class SandboxExecutor:
             self.python = real if real.startswith("/usr/") else (
                 fallback if os.path.exists(fallback) else None)
         self.base = Path(base_dir)
-        self.uid = sandbox_uid
+        if not uid_pool or min(uid_pool) < 1000:
+            raise ValueError("uid pool must hold unprivileged uids (>= 1000)")
+        start = random.randrange(len(uid_pool))
+        self._uids = itertools.cycle([*uid_pool[start:], *uid_pool[:start]])
         self.probe_timeout_s = probe_timeout_s
         self.last_workdir: Path | None = None
         self._level: str | None = None
@@ -190,16 +199,17 @@ class SandboxExecutor:
         work = Path(tempfile.mkdtemp(prefix="w-", dir=self.base))
         io_dir = Path(tempfile.mkdtemp(prefix="io-", dir=self.base))  # root-only (0700)
         self.last_workdir = work
+        uid = next(self._uids)
         try:
             for name, content in files.items():
                 path = work / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(content)
             for p in [work, *work.rglob("*")]:
-                os.chown(p, self.uid, self.uid)
+                os.chown(p, uid, uid)
             os.chmod(work, 0o700)
             (io_dir / "stdin").write_text(stdin)
-            cmd = [self.setpriv, f"--reuid={self.uid}", f"--regid={self.uid}", "--clear-groups",
+            cmd = [self.setpriv, f"--reuid={uid}", f"--regid={uid}", "--clear-groups",
                    "--no-new-privs", "--", self.bwrap, *self._bwrap_args(work), "--", *argv]
 
             def set_limits() -> None:  # runs in the child, before exec

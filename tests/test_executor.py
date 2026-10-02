@@ -271,3 +271,15 @@ def test_workdir_is_removed_after_run(ex):
     r = run_py(ex, "import os; print(os.getcwd())")
     assert r.stdout.strip() == "/work"
     assert ex.last_workdir is not None and not ex.last_workdir.exists()
+
+
+@pytest.mark.needs_l3
+def test_back_to_back_runs_do_not_exhaust_process_limit(ex):
+    """Regression: one shared uid failed with "Can't fork" after ~13 rapid runs."""
+    outs = [run_py(ex, "print(1)").stdout for _ in range(80)]
+    assert outs.count("1\n") == 80
+
+
+def test_uid_pool_must_be_unprivileged():
+    with pytest.raises(ValueError):
+        SandboxExecutor(uid_pool=range(0, 10))
