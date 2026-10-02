@@ -323,3 +323,10 @@ def test_namespace_wildcard_price(tmp_path):
     assert t.cost_microusd("local/qwen2.5-coder:1.5b", 100, 100, on=date(2026, 10, 2)) == 0
     with pytest.raises(UnknownModel):
         t.cost_microusd("remote/x", 1, 1, on=date(2026, 10, 2))  # no wildcard for remote/
+
+
+def test_suffix_wildcard_price_matches_only_that_suffix():
+    t = PriceTable.load()  # shipped table has openrouter/*:free
+    assert t.cost_microusd("openrouter/qwen/qwen3.8-27b:free", 10**6, 10**6, on=date(2026, 10, 2)) == 0
+    with pytest.raises(UnknownModel):
+        t.cost_microusd("openrouter/qwen/qwen3.8-27b", 1, 1, on=date(2026, 10, 2))  # paid variant

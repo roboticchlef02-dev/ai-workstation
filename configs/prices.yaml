@@ -80,3 +80,39 @@ models:
         output_per_mtok: 0
         source: "Gemma models on the Gemini API have been free of charge; not re-checked on Google's page"
         verified: false
+  # --- Groq (free tier; billed $0). groq.com/pricing is JavaScript-rendered and could not be
+  # read on 2026-10-02, so these are conservative builder estimates, not quoted prices. ---
+  groq/openai/gpt-oss-20b:
+    provider: groq
+    periods:
+      - valid_from: 2026-10-01
+        input_per_mtok: 0.10
+        output_per_mtok: 0.50
+        source: "builder conservative estimate; not a quoted price"
+        verified: false
+  groq/openai/gpt-oss-120b:
+    provider: groq
+    periods:
+      - valid_from: 2026-10-01
+        input_per_mtok: 0.20
+        output_per_mtok: 0.80
+        source: "builder conservative estimate; not a quoted price"
+        verified: false
+  groq/qwen/qwen3.8-27b:
+    provider: groq
+    periods:
+      - valid_from: 2026-10-01
+        input_per_mtok: 0.40
+        output_per_mtok: 0.80
+        source: "builder conservative estimate; not a quoted price"
+        verified: false
+  # --- OpenRouter free models: $0, checked via the OpenRouter models API on 2026-10-02. ---
+  openrouter/*:free:
+    provider: openrouter
+    notes: "Matches any OpenRouter model ID ending in :free. Free tier: about 50 requests/day without credits."
+    periods:
+      - valid_from: 2026-10-01
+        input_per_mtok: 0
+        output_per_mtok: 0
+        source: "OpenRouter models API pricing fields = 0 (2026-10-02)"
+        verified: true

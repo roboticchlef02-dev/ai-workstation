@@ -87,10 +87,15 @@ class PriceTable:
         return cls(version=str(data["version"]), models=models)
 
     def period(self, model_id: str, on: date) -> PricePeriod:
-        """Exact model entry first, then a `<namespace>/*` entry (e.g. `local/*`)."""
+        """Exact entry first, then `<namespace>/*:<suffix>` (e.g. `openrouter/*:free`), then
+        `<namespace>/*` (e.g. `local/*`)."""
         periods = self.models.get(model_id)
         if periods is None and "/" in model_id:
-            periods = self.models.get(model_id.split("/", 1)[0] + "/*")
+            ns = model_id.split("/", 1)[0]
+            if ":" in model_id:
+                periods = self.models.get(f"{ns}/*:" + model_id.rsplit(":", 1)[1])
+            if periods is None:
+                periods = self.models.get(f"{ns}/*")
         for p in periods or []:
             if p.covers(on):
                 return p
