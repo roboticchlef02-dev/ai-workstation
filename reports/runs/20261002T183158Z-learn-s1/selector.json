@@ -1,0 +1,184 @@
+{
+ "picks": {
+  "arrays": "selftest@1",
+  "data_structures": "repair@1",
+  "dynamic_programming": "repair@1",
+  "graphs": "repair@1",
+  "greedy": "selftest@1",
+  "hash_maps": "selftest@1",
+  "numerical": "single@1",
+  "recursion": "selftest@1",
+  "sorting_search": "single@1",
+  "strings": "selftest@1"
+ },
+ "table": [
+  {
+   "category": "arrays",
+   "single@1": 0.143,
+   "repair@1": 0.107,
+   "selftest@1": 0.344,
+   "n": 4
+  },
+  {
+   "category": "data_structures",
+   "single@1": 0.083,
+   "repair@1": 0.321,
+   "selftest@1": 0.222,
+   "n": 4
+  },
+  {
+   "category": "dynamic_programming",
+   "single@1": 0.083,
+   "repair@1": 0.422,
+   "selftest@1": 0.157,
+   "n": 4
+  },
+  {
+   "category": "graphs",
+   "single@1": 0.103,
+   "repair@1": 0.133,
+   "selftest@1": 0.125,
+   "n": 4
+  },
+  {
+   "category": "greedy",
+   "single@1": 0.083,
+   "repair@1": 0.133,
+   "selftest@1": 0.157,
+   "n": 4
+  },
+  {
+   "category": "hash_maps",
+   "single@1": 0.083,
+   "repair@1": 0.188,
+   "selftest@1": 0.344,
+   "n": 4
+  },
+  {
+   "category": "numerical",
+   "single@1": 0.143,
+   "repair@1": 0.092,
+   "selftest@1": 0.107,
+   "n": 6
+  },
+  {
+   "category": "recursion",
+   "single@1": 0.385,
+   "repair@1": 0.188,
+   "selftest@1": 0.451,
+   "n": 2
+  },
+  {
+   "category": "sorting_search",
+   "single@1": 0.143,
+   "repair@1": 0.107,
+   "selftest@1": 0.125,
+   "n": 4
+  },
+  {
+   "category": "strings",
+   "single@1": 0.083,
+   "repair@1": 0.107,
+   "selftest@1": 0.125,
+   "n": 6
+  }
+ ],
+ "stats": {
+  "arrays|repair@1": [
+   0,
+   2
+  ],
+  "arrays|selftest@1": [
+   1,
+   1
+  ],
+  "data_structures|repair@1": [
+   1,
+   1
+  ],
+  "data_structures|single@1": [
+   0,
+   2
+  ],
+  "dynamic_programming|repair@1": [
+   1,
+   0
+  ],
+  "dynamic_programming|selftest@1": [
+   0,
+   1
+  ],
+  "dynamic_programming|single@1": [
+   0,
+   2
+  ],
+  "graphs|repair@1": [
+   0,
+   1
+  ],
+  "graphs|selftest@1": [
+   0,
+   2
+  ],
+  "graphs|single@1": [
+   0,
+   1
+  ],
+  "greedy|repair@1": [
+   0,
+   1
+  ],
+  "greedy|selftest@1": [
+   0,
+   1
+  ],
+  "greedy|single@1": [
+   0,
+   2
+  ],
+  "hash_maps|selftest@1": [
+   1,
+   1
+  ],
+  "hash_maps|single@1": [
+   0,
+   2
+  ],
+  "numerical|repair@1": [
+   0,
+   3
+  ],
+  "numerical|selftest@1": [
+   0,
+   3
+  ],
+  "recursion|selftest@1": [
+   1,
+   0
+  ],
+  "recursion|single@1": [
+   1,
+   0
+  ],
+  "sorting_search|repair@1": [
+   0,
+   2
+  ],
+  "sorting_search|selftest@1": [
+   0,
+   2
+  ],
+  "strings|repair@1": [
+   0,
+   2
+  ],
+  "strings|selftest@1": [
+   0,
+   2
+  ],
+  "strings|single@1": [
+   0,
+   2
+  ]
+ }
+}
