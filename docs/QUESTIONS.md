@@ -4,10 +4,6 @@ Each question gives why it matters and a **recommended default**. Answered quest
 
 ---
 
-### Q21. Store the learned knowledge as Markdown files? *(new)*
-**Why:** this was your original picture, and it makes the knowledge usable by any AI tool, even outside the workstation (D-024).
-**Default: yes.** The Python engine writes and checks the files. You can also hand them to OpenCode, Claude or ChatGPT directly.
-
 ---
 
 ## Answered
@@ -36,5 +32,6 @@ Each question gives why it matters and a **recommended default**. Answered quest
 | Q19 | Yes: long, resumable runs are fine |
 | — | New requirement: learned knowledge must carry over when the model changes, at low token cost (D-022) |
 | Q20 | PC: i5 8th gen, 8 GB RAM, no GPU, 256 GB SSD; may change later. Local models: only small ones, slowly. Free cloud APIs are the main path; development stays in the cloud |
+| Q21 | Yes: learned knowledge stored as Markdown files, the armor pack (D-024) |
 | — | Groq and OpenRouter keys added (observed set; hidden in sandboxed commands). Hosts still blocked by Network access |
 | — | Claude (chat) review: skipped for Gate 0; ChatGPT only |
