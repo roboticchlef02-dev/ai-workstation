@@ -47,12 +47,19 @@ class BudgetCaps(BaseModel):
         return v
 
 
+COUNT_LEVELS = frozenset({"task_calls", "call_tokens"})
+
+
 class BudgetExceeded(Exception):
     def __init__(self, level: str, cap_usd: float, committed_usd: float, requested_usd: float):
         self.level, self.cap_usd = level, cap_usd
         self.committed_usd, self.requested_usd = committed_usd, requested_usd
-        super().__init__(f"{level} budget exceeded: committed ${committed_usd:.6f} + requested "
-                         f"${requested_usd:.6f} > cap ${cap_usd:.6f}")
+        if level in COUNT_LEVELS:  # counts (calls, tokens), not dollars
+            msg = f"{level} cap exceeded: {committed_usd:g} + {requested_usd:g} > {cap_usd:g}"
+        else:
+            msg = (f"{level} budget exceeded: committed ${committed_usd:.6f} + requested "
+                   f"${requested_usd:.6f} > cap ${cap_usd:.6f}")
+        super().__init__(msg)
 
 
 class SpendNotConfirmed(Exception):
