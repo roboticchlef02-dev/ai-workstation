@@ -116,3 +116,12 @@ models:
         output_per_mtok: 0
         source: "OpenRouter models API pricing fields = 0 (2026-10-02)"
         verified: true
+  groq/allam-2-7b:
+    provider: groq
+    notes: "7B model, 4096-token context: run with --max-output-tokens 2048 or less."
+    periods:
+      - valid_from: 2026-10-01
+        input_per_mtok: 0.10
+        output_per_mtok: 0.20
+        source: "builder conservative estimate; not a quoted price"
+        verified: false
