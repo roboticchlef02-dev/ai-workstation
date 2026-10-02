@@ -1,0 +1,11 @@
+# Budget caps, in list-price shadow USD (D-016). Hierarchy: global > experiment > run > task > call.
+# Control plane: changed by the human only. Environment variables may LOWER these, never raise:
+#   MAX_RUN_COST_USD -> per_run_usd, TOTAL_EXPERIMENT_BUDGET_USD -> global_usd.
+version: 1
+global_usd: 150            # Q3: provisional total ceiling; Gate 3 re-estimates
+per_experiment_usd: 25     # placeholder until the pilot
+per_run_usd: 5             # MAX_RUN_COST_USD default (CLAUDE.md)
+per_task_usd: 0.25         # BUDGET_USD_PER_TASK placeholder; set from the pilot (PLAN 5.3)
+per_call_usd: 0.10
+max_calls_per_task: 20
+max_output_tokens_per_call: 8192   # includes thinking tokens; bounds each reservation

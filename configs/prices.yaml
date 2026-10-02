@@ -1,0 +1,43 @@
+# List prices (USD per 1M tokens) used for shadow cost (D-016): every call is charged its
+# list price, whatever is actually billed (free tier, credits). Budget caps use this number.
+# Control plane: changed by the human only. Unknown model or date -> the call is refused.
+# Periods: valid_from/valid_until are inclusive dates; open-ended if valid_until is absent.
+# Earlier dates are not covered on purpose: no call in this project predates 2026-10-01.
+version: "2026-10-02"
+currency: USD
+models:
+  claude-haiku-4-5-20251001:
+    provider: anthropic
+    notes: "Extended-thinking tokens are billed as output."
+    periods:
+      - valid_from: 2026-10-01
+        input_per_mtok: 1.00
+        output_per_mtok: 5.00
+        source: "Claude API skill model table (cached 2026-09-25); docs/DECISIONS.md fact check"
+        verified: true
+  gemini-3.8-flash:
+    provider: gemini
+    notes: >-
+      Exact API model ID and prices still to confirm against Google's models list and
+      pricing page at provider implementation. Thinking tokens are billed as output.
+    periods:
+      - valid_from: 2026-10-01
+        valid_until: 2026-12-31
+        input_per_mtok: 0.75
+        output_per_mtok: 3.75
+        source: "secondary sources (pricing sites/news), not Google's page; intro price"
+        verified: false
+      - valid_from: 2027-01-01
+        input_per_mtok: 1.50
+        output_per_mtok: 7.50
+        source: "secondary sources say the intro price doubles on 2027-01-01"
+        verified: false
+  mock-1:
+    provider: mock
+    notes: "Deterministic test provider. Costs nothing, but goes through the same ledger path."
+    periods:
+      - valid_from: 2026-10-01
+        input_per_mtok: 0
+        output_per_mtok: 0
+        source: synthetic
+        verified: true
