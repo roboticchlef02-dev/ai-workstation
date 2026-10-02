@@ -4,15 +4,23 @@ Each question gives why it matters and a **recommended default**. Answered quest
 
 ---
 
-### Q14. Strict dev sandbox: when and how? *(new)*
-**Why:** you approved strict mode. But nested bwrap hangs inside the dev sandbox, so strict mode would stop me from running the executor's security tests, the L3 probe and live API calls (D-019).
-**Default: (b)** keep today's mode until the executor exists, then pick (a) or (c):
-- (a) strict + an exception for git and one fixed executor-test command
-- (c) strict; executor tests run only in CI
+### Q15. Which free providers? *(new)*
+**Why:** $0 budget (D-021). Cross-checking with a second model family is a core idea; today only Gemini works.
+**Default:** Gemini (have) + one of Groq / OpenRouter `:free` / GitHub Models / Mistral free tier (free tiers change; verify at sign-up). For each: key as an environment variable, and its host allowed in Network access.
 
-The settings file is write-protected and the auto-mode classifier blocks me from changing my own sandbox, so **you** apply the change when you choose. I'll give you the exact JSON.
+### Q16. Local models: where? *(new)*
+**Why:** this cloud container has no GPU (4 CPU, 16 GB), so only tiny models run here, slowly. Running on your PC changes the sandbox design (Windows → WSL2).
+**Default:** cloud + free APIs first; local later. Tell me your PC's OS, RAM, GPU.
 
-Also add `configs/budget.yaml` and `configs/prices.yaml` to the protected set (`denyWrite` + `ask`), like `CLAUDE.md`. They hold the spend caps and list prices (D-020).
+### Q17. "OpenCode": the agent app or its models? *(new)*
+**Default:** agent apps stay deferred (D-017). If its free models have a plain API, I use that. Strong models (Opus etc.) wait until after v0.1 (they need a paid API).
+
+### Q18. Coding first? *(new)*
+**Default: yes.** Python tasks with tests give automatic, trustworthy scoring. Reasoning/math later.
+
+### Q19. Time budget? *(new)*
+**Why:** free tiers limit requests per day, so time is the real budget.
+**Default:** runs may take hours or days, spread over sessions. I build resumable runs.
 
 ---
 
@@ -33,4 +41,6 @@ Also add `configs/budget.yaml` and `configs/prices.yaml` to the protected set (`
 | Q11 | Yes: Q1–Q10 + A8–A12 adopted (A9 as modified by the builder) |
 | Q12 | Yes: Gemini (AI Studio key) first; Anthropic optional (no key yet); shadow-cost budgets (D-016); no chat apps, no agent CLIs (D-017) |
 | Q13 | Yes: milestones M1→M4 (D-018). M1–M3 results are exploratory |
+| Q14 | Default (b): keep today's sandbox mode until the executor exists, then pick (a) or (c) |
+| — | No paid API keys, ever: $0 real budget, free/local models only (D-021) |
 | — | Claude (chat) review: skipped for Gate 0; ChatGPT only |

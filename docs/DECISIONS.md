@@ -194,3 +194,12 @@ Recommendation: **(b) until the executor lands, then decide between (a) and (c)*
 - `configs/prices.yaml` and `configs/budget.yaml` are Control plane. They are not yet write-protected in the dev sandbox → added to Q14.
 - Gemini model ID `gemini-3.8-flash` and its prices are still **unverified** (`verified: false`).
 · BUILDER
+
+**D-021 · 2026-10-02 · $0 real budget: free and local models only (Ridha).**
+Goal restated by Ridha: make weak free models (Gemini free tier, Llama, local models) produce better results than they do alone; later, test whether the same environment also helps strong models.
+Consequences:
+- **Budget matching:** local models have no list price, so shadow dollars (D-016) can't be the only unit. Proposal: match arms on model calls + tokens; report shadow dollars alongside. · PROPOSED
+- **Rate limits are the binding constraint**, not dollars. Scale M4 from measured requests/day; build resumable runs. · BUILDER
+- **Network:** the cloud environment blocks every free provider tested except Gemini (api.groq.com, openrouter.ai, models.github.ai, api.mistral.ai, api.cerebras.ai, router.huggingface.co, integrate.api.nvidia.com, api.cloudflare.com, opencode.ai, api.together.xyz, api.sambanova.ai: proxy 403, probed 2026-10-02 without credentials). Ridha can allow hosts in the environment's Network access settings.
+- **Second model family** (R2, A9, cross-family validation) depends on Q15. Until then, Gemini-only results are exploratory.
+- **Honest expectation:** execute-and-repair and test-filtered sampling are the most reliable gains for weak models. Continual "learning" gains are the uncertain part the experiment measures. Weights don't change, so gains plateau. Strong models usually gain less on easy tasks (ceiling).
