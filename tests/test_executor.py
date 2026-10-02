@@ -283,3 +283,73 @@ def test_back_to_back_runs_do_not_exhaust_process_limit(ex):
 def test_uid_pool_must_be_unprivileged():
     with pytest.raises(ValueError):
         SandboxExecutor(uid_pool=range(0, 10))
+
+
+# --- reviewer findings (M1 gate) -------------------------------------------------------
+
+@pytest.mark.needs_l3
+def test_tmp_and_work_are_size_capped(ex):
+    """Reviewer #4: many small files must not fill host memory or disk."""
+    code = """
+import json
+out = {}
+for d in ("/tmp", "/work"):
+    total = 0
+    for i in range(30):
+        try:
+            with open(f"{d}/f{i}.bin", "wb") as f:
+                f.write(b"x" * (8 * 1024 * 1024))
+            total += 8
+        except OSError:
+            break
+    out[d] = total
+print(json.dumps(out))
+"""
+    out = last_json(run_py(ex, code).stdout)
+    assert out["/tmp"] <= ex.limits.tmpfs_mb and out["/work"] <= ex.limits.tmpfs_mb, out
+
+
+@pytest.mark.needs_l3
+def test_input_files_are_read_only(ex):
+    code = "try:\n    open('main.py', 'w').write('x'); print('WROTE')\nexcept OSError:\n    print('RO')"
+    assert run_py(ex, code).stdout.strip() == "RO"
+
+
+@pytest.mark.needs_l3
+def test_deep_directory_tree_does_not_crash_cleanup(ex):
+    """Reviewer #3: a 3000-deep tree used to make rmtree raise RecursionError."""
+    code = "import os\nfor _ in range(3000):\n    os.mkdir('a'); os.chdir('a')\nprint('deep')"
+    r = run_py(ex, code)
+    assert "deep" in r.stdout
+    assert not ex.last_workdir.exists()
+
+
+@pytest.mark.needs_l3
+def test_no_process_survives_a_run(ex):
+    """Reviewer #9: a detached grandchild must not outlive the run."""
+    code = ("import os, time\n"
+            "if os.fork() == 0:\n    os.setsid()\n    if os.fork() == 0:\n        time.sleep(60)\n"
+            "    os._exit(0)\nprint('parent done')")
+    run_py(ex, code)
+    uid = ex.last_uid
+    alive = []
+    for pid in filter(str.isdigit, os.listdir("/proc")):
+        try:
+            with open(f"/proc/{pid}/status") as f:
+                if any(ln.startswith("Uid:") and int(ln.split()[1]) == uid for ln in f):
+                    alive.append(pid)
+        except OSError:
+            pass
+    assert not alive
+
+
+def test_base_dir_symlink_is_refused(tmp_path):
+    """Reviewer #10: a symlinked or foreign-owned base dir disables execution."""
+    target = tmp_path / "elsewhere"
+    target.mkdir()
+    link = tmp_path / "base"
+    link.symlink_to(target)
+    e = SandboxExecutor(base_dir=link)
+    assert e.isolation_level() != "L3"
+    with pytest.raises(ExecutionDisabled):
+        e.run({"main.py": "print(1)"}, ["python3", "main.py"])

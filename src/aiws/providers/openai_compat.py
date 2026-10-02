@@ -22,6 +22,7 @@ from aiws.providers.base import (
     ProviderError,
     Usage,
     http_error,
+    malformed,
 )
 from aiws.secretguard import redact
 
@@ -86,7 +87,12 @@ class OpenAICompatProvider(ModelProvider):
             headers.clear()
         if r.status_code != 200:
             raise http_error(self.name, r)
-        return self._parse(req, r.json(), time.monotonic() - t0)
+        try:
+            return self._parse(req, r.json(), time.monotonic() - t0)
+        except ProviderError:
+            raise
+        except Exception as e:  # noqa: BLE001  (JSON, shape or validation errors)
+            raise malformed(self.name, e) from None
 
     def _parse(self, req: GenerateRequest, data: dict[str, Any],
                latency: float) -> GenerateResponse:

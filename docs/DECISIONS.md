@@ -231,5 +231,25 @@ Ridha's original picture: structured Markdown files that give any AI superpowers
 - **Seed benchmark** `benchmarks/seed` (version `seed-0.1`, 27 Python tasks, 10 categories, difficulty 1–3): written by the builder (Claude). None of the solvers (Gemini, Groq, OpenRouter, OpenCode free models) is a Claude model, so the generator family differs from every solver (PLAN 5.5). Hidden expected values are computed by running the reference in the sandbox; all 81 hand-written visible examples agree with the references. **Not done for seed:** independent second solution, mutation check, human spot-check. Results on seed are exploratory only (D-018) and the seed set is never a held-out set.
 - **Expected values never enter the sandbox:** the harness only returns function outputs; comparison happens outside. Code under test can forge a result line, but only with values it computes itself (tested).
 - **Evaluator** is a separate process with a key-free environment; it refuses a benchmark whose files changed since build (manifest hash). It runs as the same OS user as the orchestrator; a separate identity (A10) is M4 work.
-- **Per-run sandbox uid** from a pool of 64 (200000–200063). One shared uid failed after about 13 back-to-back runs: the kernel releases a run's process count shortly after it ends. This also closes Gate 0 reviewer #8 (shared NPROC).
+- **Per-run sandbox uid** from a pool of 64 (200000–200063). One shared uid failed after about 13 back-to-back runs ("Can't fork"). **Corrected root cause (M1 gate):** sandbox processes orphaned at pid-namespace teardown were reparented to the container's init, which reaps slowly. Their zombies kept counting against the uid's RLIMIT_NPROC. The executor now makes itself a child subreaper and reaps them. A single uid then handles 60 back-to-back runs. The pool stays, so concurrent runs don't share a process budget (Gate 0 reviewer #8).
 - Executor and evaluator security tests run only outside the dev sandbox (Q14 = b). CI skips them visibly; the fail-closed tests run everywhere.
+
+## M1 gate reviewer — classification (2026-10-02)
+
+| # | Finding | Class | Action |
+|---|---|---|---|
+| 1 | D vs C unfair: model access; C doesn't keep best | ACCEPT | Arms per model (A1, C1, A2, C2) + D; D is compared against the best single-model arm. C keeps the best candidate |
+| 2 | Forged result lines crash the run | ACCEPT | Strict payload validation; any parsing/comparison exception → fail verdict, never a crash |
+| 3 | Deep tree crashes cleanup | ACCEPT | Cleanup never raises; falls back to `rm -rf --one-file-system` |
+| 4 | No total memory/disk cap | ACCEPT (part) / DEFER | Sized tmpfs for `/tmp` and `/work` now. cgroup `memory.max`/`pids.max` before running on Ridha's PC (needs cgroup delegation) |
+| 5 | Spend estimate uses one rate for D; billing tier hardcoded | ACCEPT (estimate) / DEFER (tier) | Each call priced at the higher rate of the pair. Billing tier: all keys are free by policy (D-021); a per-provider config comes with the first paid key, if ever |
+| 6 | Evaluator trusts request pool; failure text leaks; orchestrator reads hidden files | ACCEPT | Evaluator pool fixed at startup; failures reported as fixed categories only; the runner takes the benchmark hash from the evaluator, not from the hidden files |
+| 7 | Report hides infra failures | ACCEPT (report) / DEFER (prereg rules → M4) | Report counts evaluator errors, budget stops and provider failures per arm, says when a run aborted, and notes that wall time includes pacing |
+| 8 | Probe weaker than tests; no seccomp | ACCEPT (probe) / DEFER (seccomp) | Probe also checks nested userns blocked, `/usr` read-only, CapEff = 0, NoNewPrivs = 1, and the real AS/FSIZE limits. seccomp filter before Ridha's PC / M4 |
+| 9 | Surviving children unverified | ACCEPT | After every run, kill any process still owned by the run's uid; test asserts none survive |
+| 10 | Predictable base dir | ACCEPT | Base dir checked with lstat: real directory, root-owned, mode 0711, else refused |
+| 11 | Placeholder strings abort runs | ACCEPT | SecretLeak in a model call → that call fails (logged), the run continues. Prompts still never carry a secret |
+| 12 | Truncate before redact | ACCEPT | Redact first, then truncate |
+| 13 | Malformed 200 response crashes | ACCEPT | Parsing errors → ProviderError (billing unknown) |
+| 14 | Evaluator validation gaps | ACCEPT | Build rejects empty hidden inputs and non-finite expected values; manifest digest recomputed; expected values loaded and hash-checked once at startup; evaluator code hash reported with every verdict |
+| 15 | Seed tasks at ceiling | ACCEPT | Add harder tasks and/or weaker models before drawing any conclusion. Reported to Ridha |

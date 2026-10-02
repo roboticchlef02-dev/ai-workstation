@@ -138,7 +138,7 @@ def test_evaluator_scores_in_a_separate_process(built, code, passed):
 
 @pytest.mark.needs_l3
 def test_held_out_returns_pass_fail_only(built):
-    with EvaluatorClient(built) as ev:
+    with EvaluatorClient(built, pool="HELD_OUT") as ev:
         r = ev.evaluate("t-add", "def add(a, b):\n    return 0\n", "HELD_OUT")
     # Exactly these keys: a verdict plus two constants. No counts, no messages, no values.
     assert set(r) == {"task_id", "passed", "evaluator_version", "benchmark_sha256"}
@@ -179,3 +179,80 @@ def test_unknown_task_and_pool_are_errors(built):
 def test_task_model_roundtrip():
     t = Task(**ADD)
     assert t.visible_tests[0].expected == 3
+
+
+# --- reviewer findings (M1 gate) -------------------------------------------------------
+
+FORGERIES = ['[1]', '1', '{"results": [1, 2, 3]}', '[' * 5000, '{"results": null}',
+             '{"results": [{"ok": true}, {"ok": true}, {"ok": true}]}',
+             '{"results": [{"ok": "yes", "value": 1}, {"ok": true, "value": 1}, {"ok": true, "value": 1}]}',
+             '{"load_error": "x", "results": []}']
+
+
+@pytest.mark.needs_l3
+@pytest.mark.parametrize("payload", FORGERIES, ids=range(len(FORGERIES)))
+def test_forged_payloads_fail_instead_of_crashing(l3, payload):
+    """Reviewer #2: whatever code under test prints, the verdict is a clean fail."""
+    code = ("import atexit, sys\n"
+            f"atexit.register(lambda: sys.__stdout__.write(sys.argv[1] + {payload!r} + '\\n'))\n"
+            "def add(a, b):\n    return a + b\n")
+    results, err = benchmark.run_cases(l3, "add", code, [[1, 2], [3, 4], [5, 6]])
+    assert results is None and err == "malformed_output"
+
+
+def test_compare_never_raises():
+    deep = 1
+    for _ in range(5000):
+        deep = [deep]
+    assert compare(10**400, 1.0, "float") is False
+    assert compare(deep, deep) in (True, False)
+    assert compare(float("nan"), float("nan"), "float") is False
+
+
+@pytest.mark.needs_l3
+def test_failure_reason_never_carries_hidden_inputs(built):
+    """Reviewer #6: a solution that raises the hidden inputs gets only a fixed category."""
+    leak = "raise Exception(open('inputs.json').read())\n"
+    with EvaluatorClient(built, pool="SEED") as ev:
+        r = ev.evaluate("t-add", leak, "SEED")
+    assert r["passed"] is False and r["failure"] == "load_error"
+    assert "1000000000000" not in json.dumps(r)  # a hidden input of t-add
+
+
+@pytest.mark.needs_l3
+def test_evaluator_pool_is_fixed_at_startup(built):
+    with EvaluatorClient(built, pool="HELD_OUT") as ev:
+        r = ev.evaluate("t-add", "def add(a, b):\n    return a + b\n", "TRAIN")
+        info = ev.info()
+    assert "error" in r and "n_passed" not in r
+    assert info["pool"] == "HELD_OUT" and info["evaluator_code_sha256"]
+
+
+@pytest.mark.needs_l3
+def test_build_rejects_empty_hidden_inputs(tmp_path, l3):
+    root = make_bench(tmp_path)
+    (root / "hidden" / "t-add.yaml").write_text(yaml.safe_dump(dict(ADD_HIDDEN, hidden_inputs=[])))
+    with pytest.raises(ValueError, match="no hidden inputs"):
+        benchmark.build(root, l3, version="x")
+
+
+@pytest.mark.needs_l3
+def test_build_rejects_non_finite_expected(tmp_path, l3):
+    root = make_bench(tmp_path)
+    nan_ref = dict(ADD_HIDDEN, reference_solution="def add(a, b):\n    return float('nan')\n")
+    vis = dict(ADD, visible_tests=[])
+    (root / "tasks" / "t-add.yaml").write_text(yaml.safe_dump(vis))
+    (root / "hidden" / "t-add.yaml").write_text(yaml.safe_dump(nan_ref))
+    with pytest.raises(ValueError, match="non-finite"):
+        benchmark.build(root, l3, version="x")
+
+
+@pytest.mark.needs_l3
+def test_manifest_digest_is_recomputed(tmp_path, built):
+    copy = tmp_path / "copy2"
+    shutil.copytree(built, copy)
+    m = json.loads((copy / "MANIFEST.json").read_text())
+    m["sha256"] = "0" * 64
+    (copy / "MANIFEST.json").write_text(json.dumps(m))
+    with pytest.raises(ValueError, match="digest"):
+        Evaluator(copy)

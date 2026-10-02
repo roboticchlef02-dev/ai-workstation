@@ -48,5 +48,25 @@ Real: $0 (free models). Shadow (list price): see the run report.
 2. Does any path let code under test influence the evaluator's verdict beyond computing its own outputs?
 3. Which measurement in M2 would best show that learning, not luck, improved D?
 
-## 8. Fresh-context reviewer findings
-_(pending)_
+## 8. Fresh-context reviewer findings (verbatim summary, 2026-10-02)
+Reviewer: a fresh-context subagent that had not seen the build conversation. Read-only; no network. Its report, condensed only for length (every finding kept):
+
+1. **HIGH: D vs C comparison unfair.** (a) A and C only use model 1, while D also gets model 2: D can win through model access, not collaboration. (b) D keeps the best candidate, but C always takes the latest repair, even a worse one or empty code.
+2. **MED-HIGH: forged result lines crash the run** (verified). The marker is readable from `sys.argv`. Payloads like `[1]`, `1`, `{"results":[1]}`, deep nesting, or a huge int in float mode raise uncaught exceptions in `run_cases`/`check`/`compare`. The runner exits without a report; the evaluator returns `{"error"}`, which is scored as a fail.
+3. **MED: cleanup can be crashed by a deep directory tree** (verified). On a 3000-deep tree, `shutil.rmtree` raises RecursionError, which aborts the run and leaves the files on disk.
+4. **MED: no total memory or disk limit.** The tmpfs `/tmp` has no size cap; `/work` is on the host disk; FSIZE is per file and AS per process (16 × 512 MB). A loop writing 16 MB files fills host RAM.
+5. **MED: spend check can be bypassed** (verified). The estimate prices all D calls at model 2's rate, so a paid model 1 can slip through at $0. `billing_tier="free"` is hardcoded.
+6. **MED (critical for M4): hidden data can reach the workstation.** The evaluator trusts the pool named in the request; failure strings carry the sandbox stderr tail, so `raise Exception(open('inputs.json').read())` leaks about 170 characters of hidden inputs; the orchestrator itself reads the hidden files to hash them.
+7. **MED: the report hides infrastructure failures.** Evaluator errors, budget stops and post-retry provider failures all show as a plain fail. Retries count against the 20-calls-per-task ledger cap. Aborted runs give different denominators per arm. Wall time includes pacing and backoff.
+8. **MED: the self-probe is weaker than the tests.** It doesn't check nested-userns blocking, a read-only `/usr`, capabilities or no-new-privs, or that the real limits apply. No seccomp filter. CI skips every L3 test.
+9. **LOW-MED: the timeout test can't see surviving children.** `killpg` only reaches bwrap's group; the sandbox has its own session. Nothing asserts that the run's processes are gone.
+10. **LOW-MED: `/tmp/aiws-exec` is a predictable path.** It is created with no owner or symlink check, so a local user could redirect root's writes and chowns.
+11. **LOW: placeholder strings in model code abort runs** (verified). Strings like `API_KEY = "your-api-key-here"`, `Bearer …` or a PEM header raise SecretLeak inside repair prompts, and nothing catches it.
+12. **LOW: errors are truncated before redaction** (verified). A key near character 284 of an error message keeps 16 of its characters.
+13. **LOW: a malformed 200 response crashes the run.** JSONDecodeError and ValidationError are not ProviderErrors.
+14. **LOW: evaluator validation gaps.** Empty `hidden_inputs` passes any code; the manifest sha256 is not recomputed; expected files are re-read per request without a hash check; `EVALUATOR_VERSION` is set by hand; NaN expected values are accepted.
+15. **Methodology: seed tasks at ceiling.** Every completed live row so far passed in every arm, so there is no signal yet.
+
+Found sound: expected values never enter the sandbox, and HELD_OUT responses are minimal; strict bool/int comparison through JSON; allowlisted environments, and the evaluator is key-free; keys only in headers, https enforced, no redirects; ledger locking, rounding, open reservations, unpriced refusal, env-only-lowers; sandbox flags (`--new-session`, `--cap-drop ALL`, `--disable-userns`, no-new-privs, per-run uid, root-only io files, `close_fds`); symlink-safe rmtree; replay miss never goes live.
+
+Classification and actions: `docs/DECISIONS.md`, "M1 gate reviewer — classification".

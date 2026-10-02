@@ -2,7 +2,9 @@
 
 A  single shot: one call, no execution.
 C  execute-and-repair: one model; run the visible examples; on failure, show the model the
-   failures and let it fix the code (up to `rounds` repairs). The strong simple baseline.
+   failures and let it fix the best code so far (up to `rounds` repairs). The strong simple
+   baseline. The runner runs A and C once per model (A1, C1, A2, C2) so D can be compared
+   with the best single-model arm, not just model 1 (M1 gate reviewer #1).
 D  simple two-model workstation: two solvers answer independently; visible examples pick a
    passing answer; if none passes, the *other* model repairs the best candidate, alternating.
 
@@ -23,6 +25,7 @@ from aiws.budget import BudgetExceeded
 from aiws.executor import SandboxExecutor
 from aiws.metered import CallContext, MeteredClient
 from aiws.providers.base import GenerateRequest, Message, ProviderError, Sampling
+from aiws.secretguard import SecretLeak
 
 TEMPLATE_VERSION = "m1-v1"
 SYSTEM = "You are an expert Python programmer. You write correct, efficient, self-contained code."
@@ -140,6 +143,11 @@ class Solver:
                 self.calls += 1  # a failed call still counts against the arm
                 self.errors.append(str(e)[:200])
                 return None
+            except SecretLeak as e:
+                # Model code with a key-like placeholder ("Bearer abc…"): the prompt is never
+                # sent; this call fails and the run goes on (reviewer #11).
+                self.errors.append(f"prompt refused: {e}"[:200])
+                return None
         return None
 
 
@@ -151,6 +159,7 @@ class ArmOutcome:
     rounds_used: int
     winner_model: str
     stopped: str = ""  # why the arm stopped early (budget), if it did
+    provider_errors: int = 0  # calls that failed after retries (or were refused)
     trace: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -172,6 +181,7 @@ def _repair_prompt(task: Task, cand: Candidate) -> str:
 def run_arm(arm: str, task: Task, solvers: list[Solver], ex: SandboxExecutor, ctx: CallContext,
             *, rounds: int) -> ArmOutcome:
     calls_before = sum(s.calls for s in solvers)
+    errors_before = sum(len(s.errors) for s in solvers)
     trace: list[dict[str, Any]] = []
     stopped = ""
     best: Candidate | None = None
@@ -189,8 +199,10 @@ def run_arm(arm: str, task: Task, solvers: list[Solver], ex: SandboxExecutor, ct
             note("solve", best)
             while not best.passes and used < rounds:
                 used += 1
-                best = verify(ex, task, _ask(solvers[0], _repair_prompt(task, best), ctx))
-                note(f"repair{used}", best)
+                c = verify(ex, task, _ask(solvers[0], _repair_prompt(task, best), ctx))
+                note(f"repair{used}", c)
+                if (c.passes, c.n_pass) >= (best.passes, best.n_pass):  # keep best, like D
+                    best = c
         elif arm == "D":
             pair = solvers[:2] if len(solvers) >= 2 else [solvers[0], solvers[0]]
             cands = []
@@ -215,4 +227,5 @@ def run_arm(arm: str, task: Task, solvers: list[Solver], ex: SandboxExecutor, ct
     best = best or Candidate(code="", model_id=solvers[0].model_id)
     return ArmOutcome(code=best.code, visible_pass=best.passes,
                       model_calls=sum(s.calls for s in solvers) - calls_before,
-                      rounds_used=used, winner_model=best.model_id, stopped=stopped, trace=trace)
+                      rounds_used=used, winner_model=best.model_id, stopped=stopped, trace=trace,
+                      provider_errors=sum(len(s.errors) for s in solvers) - errors_before)

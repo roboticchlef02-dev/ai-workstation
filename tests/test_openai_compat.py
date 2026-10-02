@@ -131,3 +131,10 @@ def test_local_server_without_key_is_allowed():
 def test_remote_server_requires_a_key_env():
     with pytest.raises(ValueError):
         provider(lambda _: httpx.Response(200, json=OK_BODY), key_env=None)
+
+
+@pytest.mark.parametrize("body", [b"<html>", b'{"choices": [1]}', b'{"choices": [{"message": "x"}]}'])
+def test_malformed_200_is_a_provider_error(body):
+    with pytest.raises(ProviderError) as exc:
+        provider(lambda _: httpx.Response(200, content=body)).generate(req())
+    assert exc.value.billable is None

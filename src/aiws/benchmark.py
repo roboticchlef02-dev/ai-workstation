@@ -69,7 +69,15 @@ def load_hidden_cases(root: Path | str, task_id: str) -> list[Case]:
 
 def compare(got: Any, expected: Any, mode: str = "exact") -> bool:
     """Both sides went through JSON (tuples are lists). Booleans never equal numbers
-    (True != 1). In "float" mode numbers match within a small tolerance."""
+    (True != 1). In "float" mode numbers match within a small tolerance. Never raises:
+    anything odd (huge ints, deep nesting) is simply not equal."""
+    try:
+        return _compare(got, expected, mode)
+    except (OverflowError, RecursionError, TypeError, ValueError):
+        return False
+
+
+def _compare(got: Any, expected: Any, mode: str) -> bool:
     if isinstance(got, bool) or isinstance(expected, bool):
         return type(got) is type(expected) and got == expected
     if isinstance(got, (int, float)) and isinstance(expected, (int, float)):
@@ -78,10 +86,10 @@ def compare(got: Any, expected: Any, mode: str = "exact") -> bool:
         return got == expected
     if isinstance(got, list) and isinstance(expected, list):
         return len(got) == len(expected) and all(
-            compare(g, e, mode) for g, e in zip(got, expected))
+            _compare(g, e, mode) for g, e in zip(got, expected))
     if isinstance(got, dict) and isinstance(expected, dict):
         return got.keys() == expected.keys() and all(
-            compare(got[k], expected[k], mode) for k in got)
+            _compare(got[k], expected[k], mode) for k in got)
     return type(got) is type(expected) and got == expected
 
 
@@ -94,19 +102,39 @@ def run_cases(executor: SandboxExecutor, entry_point: str, code: str,
     lines = [ln for ln in r.stdout.splitlines() if ln.startswith(marker)]
     if not lines:
         if r.timed_out:
-            return None, "timed out"
+            return None, "timeout"
         tail = r.stderr.strip().splitlines()[-3:]
-        return None, f"crashed (exit {r.returncode}): " + " | ".join(tail)[-300:]
+        return None, f"crash: exit {r.returncode}: " + " | ".join(tail)[-300:]
     try:
         payload = json.loads(lines[-1][len(marker):])
-    except ValueError:
-        return None, "output too large or malformed"
-    if "load_error" in payload:
-        return None, f"could not load solution: {payload['load_error']}"
-    results = payload.get("results")
-    if not isinstance(results, list) or len(results) != len(inputs):
-        return None, "harness result mismatch"
-    return results, ""
+        if isinstance(payload, dict) and set(payload) == {"load_error"}:
+            return None, f"load_error: {str(payload['load_error'])[:500]}"
+        return _validated(payload, len(inputs)), ""
+    except Exception:  # noqa: BLE001  (code under test can print anything: never crash on it)
+        return None, "malformed_output"
+
+
+def _validated(payload: Any, n: int) -> list[dict[str, Any]]:
+    """Accept only {"results": [n items of {"ok": true, "value": …} | {"ok": false, "error": str}]}."""
+    if not isinstance(payload, dict) or set(payload) != {"results"}:
+        raise ValueError("bad payload")
+    results = payload["results"]
+    if not isinstance(results, list) or len(results) != n:
+        raise ValueError("bad results")
+    for item in results:
+        if not isinstance(item, dict) or not isinstance(item.get("ok"), bool):
+            raise ValueError("bad item")
+        if item["ok"] and set(item) != {"ok", "value"}:
+            raise ValueError("bad ok item")
+        if not item["ok"] and (set(item) != {"ok", "error"} or not isinstance(item["error"], str)):
+            raise ValueError("bad error item")
+    return results
+
+
+def failure_category(err: str) -> str:
+    """Fixed categories only: free text could carry hidden inputs (reviewer #6)."""
+    head = err.split(":", 1)[0]
+    return head if head in ("timeout", "crash", "load_error", "malformed_output") else "error"
 
 
 def check(results: list[dict[str, Any]] | None, cases: list[Case], mode: str,
@@ -118,7 +146,10 @@ def check(results: list[dict[str, Any]] | None, cases: list[Case], mode: str,
             out.append((False, ""))
             continue
         res = results[i]
-        args = ", ".join(json.dumps(a) for a in case.args)
+        try:
+            args = ", ".join(json.dumps(a) for a in case.args)
+        except (TypeError, ValueError, RecursionError):
+            args = "…"
         if not res.get("ok"):
             out.append((False, f"{entry_point}({args}) raised {res.get('error')}"[:400]))
         elif compare(res.get("value"), case.expected, mode):
@@ -130,6 +161,16 @@ def check(results: list[dict[str, Any]] | None, cases: list[Case], mode: str,
 
 
 # --- build + manifest ------------------------------------------------------------------
+
+def _finite(v: Any) -> bool:
+    if isinstance(v, float):
+        return math.isfinite(v)
+    if isinstance(v, list):
+        return all(_finite(x) for x in v)
+    if isinstance(v, dict):
+        return all(_finite(x) for x in v.values())
+    return True
+
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -156,7 +197,10 @@ def verify_manifest(root: Path | str) -> str:
     if actual != manifest["files"]:
         changed = sorted(set(actual.items()) ^ set(manifest["files"].items()))
         raise ValueError(f"benchmark changed since build: {sorted({c[0] for c in changed})}")
-    return manifest["sha256"]
+    digest = hashlib.sha256(json.dumps(actual, sort_keys=True).encode()).hexdigest()
+    if digest != manifest["sha256"]:
+        raise ValueError("benchmark changed since build: manifest digest mismatch")
+    return digest
 
 
 def build(root: Path | str, executor: SandboxExecutor, version: str) -> dict[str, Any]:
@@ -167,6 +211,9 @@ def build(root: Path | str, executor: SandboxExecutor, version: str) -> dict[str
         spec = load_hidden_spec(root, task.id)
         if spec.id != task.id:
             problems.append(f"{task.id}: hidden id mismatch")
+            continue
+        if not spec.hidden_inputs:
+            problems.append(f"{task.id}: no hidden inputs (any code would pass)")
             continue
         vis_inputs = [c.args for c in task.visible_tests]
         res, err = run_cases(executor, task.entry_point, spec.reference_solution,
@@ -184,6 +231,9 @@ def build(root: Path | str, executor: SandboxExecutor, version: str) -> dict[str
             continue
         cases = [{"args": a, "expected": r["value"]}
                  for a, r in zip(spec.hidden_inputs, res[len(vis_inputs):])]
+        if not all(_finite(c["expected"]) for c in cases):
+            problems.append(f"{task.id}: non-finite expected value (NaN/inf)")
+            continue
         (root / "hidden" / f"{task.id}.expected.json").write_text(
             json.dumps({"id": task.id, "cases": cases}) + "\n")
     if problems:

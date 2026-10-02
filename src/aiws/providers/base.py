@@ -94,15 +94,23 @@ def http_error(provider: str, r: httpx.Response) -> ProviderError:
     """Classify a non-200 reply. 4xx: rejected before generation (not billed); 429 and 5xx:
     retryable; 5xx billing unknown. Echoed keys are redacted from the message."""
     try:
-        message = str(r.json().get("error", {}).get("message", ""))[:300]
+        message = str(r.json().get("error", {}).get("message", ""))[:5000]
     except (ValueError, AttributeError):
-        message = r.text[:300]
-    text = redact(f"{provider} HTTP {r.status_code}: {message}")
+        message = r.text[:5000]
+    # Redact first, then truncate: truncating first can cut a key in half so the redactor
+    # no longer recognises it (reviewer #12).
+    text = redact(f"{provider} HTTP {r.status_code}: {message}")[:400]
     if r.status_code == 429:
         return ProviderError(text, billable=False, retryable=True)
     if r.status_code >= 500:
         return ProviderError(text, billable=None, retryable=True)
     return ProviderError(text, billable=False)
+
+
+def malformed(provider: str, e: Exception) -> ProviderError:
+    """A 200 reply we can't parse: the call may have been billed (reviewer #13)."""
+    return ProviderError(f"{provider} returned a malformed response ({type(e).__name__})",
+                         billable=None)
 
 
 # Conservative input-token estimate for reservations: ~3 characters per token + overhead.

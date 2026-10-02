@@ -41,18 +41,48 @@ def test_full_loop_with_mock_models(tmp_path):
     benchmark.build(bench, ex, version="t")
     providers = [(MockProvider(model_id="mock-1", script=scripted), "mock-1"),
                  (MockProvider(model_id="mock-1", script=scripted), "mock-1")]
-    r = run_experiment(models=[], arm_list=["A", "C", "D"], benchmark=bench, limit=None,
+    r = run_experiment(models=[], arm_list=None, benchmark=bench, limit=None,
                        task_ids=None, seed=3, confirm_spend=False, pool="SEED",
                        rounds={"A": 0, "C": 3, "D": 2}, max_out=512, out_dir=tmp_path / "out",
                        state_dir=tmp_path / "state", interval=0.0, providers=providers,
                        log=lambda *_: None)
     got = {(row["task_id"], row["arm"]): row for row in r["rows"]}
-    assert len(got) == 6
+    assert r["config"]["arms"] == ["A1", "C1", "A2", "C2", "D"]  # every arm for 2 models
+    assert len(got) == 10
     for tid in ("t-add", "t-rev"):
-        assert got[(tid, "A")]["passed"] is False and got[(tid, "A")]["model_calls"] == 1
-        assert got[(tid, "C")]["passed"] is True and got[(tid, "C")]["model_calls"] == 2
+        for a in ("A1", "A2"):
+            assert got[(tid, a)]["passed"] is False and got[(tid, a)]["model_calls"] == 1
+        for c in ("C1", "C2"):
+            assert got[(tid, c)]["passed"] is True and got[(tid, c)]["model_calls"] == 2
         assert got[(tid, "D")]["passed"] is True and got[(tid, "D")]["model_calls"] == 3
     report = r["report_path"].read_text()
-    assert "| A single shot | 0/2 |" in report and "| C execute + repair | 2/2 |" in report
+    assert "| A1 single shot (mock-1) | 0/2 |" in report
+    assert "| C1 execute + repair (mock-1) | 2/2 |" in report
+    assert "D vs the best single-model arm" in report
+    assert r["config"]["fingerprint"]["sha256"] and r["config"]["evaluator_code_sha256"]
     lines = (r["report_path"].parent / "results.jsonl").read_text().splitlines()
-    assert len(lines) == 6 and all(json.loads(x)["run_id"] == r["run_id"] for x in lines)
+    assert len(lines) == 10 and all(json.loads(x)["run_id"] == r["run_id"] for x in lines)
+
+
+def test_arm_spec_parsing_and_models():
+    from aiws.run import arm_models, arm_parts, default_arms
+    assert arm_parts("A1") == ("A", 0) and arm_parts("C2") == ("C", 1) and arm_parts("C") == ("C", 0)
+    assert arm_models("D", 2) == [0, 1] and arm_models("D", 1) == [0]
+    assert default_arms(1) == ["A1", "C1", "D"]
+    for bad in ("B1", "D2", "Ax"):
+        with pytest.raises(ValueError):
+            arm_parts(bad)
+    with pytest.raises(ValueError):
+        arm_models("A2", 1)
+
+
+def test_estimate_prices_d_at_the_dearer_model():
+    """Reviewer #5: a free second model must not hide a paid first model."""
+    from aiws.prices import PriceTable
+    from aiws.run import estimate_usd, make_provider
+    from aiws.benchmark import Task
+    t = Task(id="x", category="c", difficulty=1, entry_point="f", signature="def f():",
+             statement="s", visible_tests=[])
+    paid, free = make_provider("gemini:gemini-3.8-flash"), make_provider("gemini:gemma-4-31b-it")
+    est = estimate_usd([t], ["D"], [paid, free], PriceTable.load(), {"A": 0, "C": 3, "D": 2}, 1000)
+    assert est > 0

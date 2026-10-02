@@ -150,3 +150,20 @@ def test_live_minimal_call(monkeypatch):
     r = p.generate(GenerateRequest(model_id=MODEL, max_output_tokens=256,
                                    messages=(Message(role="user", content="Reply with OK."),)))
     assert r.text.strip() and r.usage.input_tokens > 0
+
+
+def test_key_near_truncation_point_is_still_redacted():
+    """Reviewer #12: redact before truncating."""
+    msg = "x" * 284 + FAKE_KEY
+    with pytest.raises(ProviderError) as exc:
+        provider(lambda _: httpx.Response(400, json={"error": {"message": msg}})).generate(req())
+    assert FAKE_KEY[:16] not in str(exc.value) and FAKE_KEY[4:20] not in str(exc.value)
+
+
+@pytest.mark.parametrize("body", [b"not json", b'{"candidates": "oops"}', b'[]',
+                                  b'{"candidates": [{"content": {"parts": [{"text": 5}]}}], "usageMetadata": {"promptTokenCount": "x"}}'])
+def test_malformed_200_is_a_provider_error(body):
+    """Reviewer #13."""
+    with pytest.raises(ProviderError) as exc:
+        provider(lambda _: httpx.Response(200, content=body)).generate(req())
+    assert exc.value.billable is None

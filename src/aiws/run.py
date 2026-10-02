@@ -4,7 +4,8 @@
 
 Model specs: gemini:<model>, groq:<model>, openrouter:<model>, opencode:<model>,
 local:<model>[@http://127.0.0.1:11434/v1], mock:<model> (tests). The first model is the
-single model for arms A and C; arm D uses the first two (or the first one twice).
+Arms: A<i> single shot and C<i> execute + repair on model i; D uses models 1 and 2 (or model 1
+twice). Default: every arm for the given models, so D is compared with the best single model.
 
 Safety: any non-zero estimate needs --confirm-spend (CLAUDE.md); execution needs L3; every
 call goes through the metered client (secrets check, budget, telemetry).
@@ -24,10 +25,11 @@ from typing import Any
 
 from aiws import arms as arms_mod
 from aiws.arms import Solver, run_arm
-from aiws.benchmark import Task, load_tasks, verify_manifest
+from aiws.benchmark import Task, load_tasks
 from aiws.budget import BudgetExceeded, Ledger, load_caps, spend_preflight
-from aiws.evaluator import EVALUATOR_VERSION, EvaluatorClient
+from aiws.evaluator import EvaluatorClient
 from aiws.executor import SandboxExecutor
+from aiws.fingerprint import fingerprint
 from aiws.metered import CallContext, MeteredClient
 from aiws.prices import PriceTable
 from aiws.providers.base import GenerateRequest, Message, ModelProvider
@@ -35,7 +37,7 @@ from aiws.secretguard import assert_no_secret, redact
 from aiws.telemetry import Telemetry
 
 ROOT = Path(__file__).resolve().parents[2]
-ARM_MAX_CALLS = {"A": lambda r: 1, "C": lambda r: 1 + r, "D": lambda r: 2 + r}
+ARM_MAX_CALLS = {"A": lambda r: 1, "C": lambda r: 1 + r, "D": lambda r: 2 + r}  # by letter
 # Free-tier pacing defaults (seconds between calls), per provider.
 DEFAULT_INTERVAL = {"gemini": 6.0, "groq": 2.5, "openrouter": 4.0, "opencode": 3.0,
                     "local": 0.0, "mock": 0.0}
@@ -71,26 +73,53 @@ def make_provider(spec: str) -> tuple[ModelProvider, str]:
     raise ValueError(f"unknown provider {kind!r}")
 
 
+def arm_parts(spec: str) -> tuple[str, int]:
+    """'A1' -> ('A', 0), 'C2' -> ('C', 1), 'D' -> ('D', 0); 'A'/'C' mean model 1."""
+    letter, num = spec[:1], spec[1:]
+    if letter not in ARM_MAX_CALLS or (num and not num.isdigit()) or (letter == "D" and num):
+        raise ValueError(f"unknown arm {spec!r} (use A1, C1, A2, C2, D)")
+    return letter, (int(num) - 1 if num else 0)
+
+
+def default_arms(n_models: int) -> list[str]:
+    return ["A1", "C1", "A2", "C2", "D"] if n_models >= 2 else ["A1", "C1", "D"]
+
+
+def arm_models(spec: str, n_models: int) -> list[int]:
+    letter, idx = arm_parts(spec)
+    if letter == "D":
+        return [0, 1] if n_models >= 2 else [0]
+    if idx >= n_models:
+        raise ValueError(f"arm {spec} needs model {idx + 1}, only {n_models} given")
+    return [idx]
+
+
 def estimate_usd(tasks: list[Task], arm_list: list[str], providers: list[tuple[ModelProvider, str]],
                  prices: PriceTable, rounds: dict[str, int], max_out: int) -> float:
-    """Worst case: every arm uses all its calls; each call uses the full output allowance."""
+    """Worst case: every arm uses all its calls, each call uses the full output allowance and
+    is priced at the dearest model the arm may call (reviewer #5)."""
     today = datetime.now(timezone.utc).date()
     total = 0.0
     for t in tasks:
         prompt = arms_mod.SOLVE.format(statement=t.statement, signature=t.signature,
                                        examples=arms_mod.examples_text(t)) * 2  # repair ~2x
-        for arm in arm_list:
-            prov, mid = providers[0] if arm != "D" else providers[min(1, len(providers) - 1)]
-            req = GenerateRequest(model_id=mid, system=arms_mod.SYSTEM, max_output_tokens=max_out,
-                                  messages=(Message(role="user", content=prompt),))
-            total += ARM_MAX_CALLS[arm](rounds[arm]) * prov.estimate_cost_usd(req, prices, on=today)
+        for spec in arm_list:
+            letter, _ = arm_parts(spec)
+            per_call = 0.0
+            for i in arm_models(spec, len(providers)):
+                prov, mid = providers[i]
+                req = GenerateRequest(model_id=mid, system=arms_mod.SYSTEM, max_output_tokens=max_out,
+                                      messages=(Message(role="user", content=prompt),))
+                per_call = max(per_call, prov.estimate_cost_usd(req, prices, on=today))
+            total += ARM_MAX_CALLS[letter](rounds[letter]) * per_call
     return total
 
 
-def run_experiment(*, models: list[str], arm_list: list[str], benchmark: Path, limit: int | None,
-                   task_ids: list[str] | None, seed: int, confirm_spend: bool, pool: str,
-                   rounds: dict[str, int], max_out: int, out_dir: Path, state_dir: Path,
-                   interval: float | None = None, providers: list[tuple[ModelProvider, str]] | None = None,
+def run_experiment(*, models: list[str], arm_list: list[str] | None, benchmark: Path,
+                   limit: int | None, task_ids: list[str] | None, seed: int, confirm_spend: bool,
+                   pool: str, rounds: dict[str, int], max_out: int, out_dir: Path,
+                   state_dir: Path, interval: float | None = None,
+                   providers: list[tuple[ModelProvider, str]] | None = None,
                    log=print) -> dict[str, Any]:
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-s{seed}"
     caps = load_caps()
@@ -98,13 +127,15 @@ def run_experiment(*, models: list[str], arm_list: list[str], benchmark: Path, l
     state_dir.mkdir(parents=True, exist_ok=True)
     ledger = Ledger(state_dir / "ledger.sqlite", caps)
     telemetry = Telemetry(state_dir / "telemetry.sqlite")
-    bench_sha = verify_manifest(benchmark)
-    tasks = load_tasks(benchmark)
+    tasks = load_tasks(benchmark)  # public task files only; hidden files stay with the evaluator
     if task_ids:
         tasks = [t for t in tasks if t.id in set(task_ids)]
     if limit:
         tasks = tasks[:limit]
     providers = providers or [make_provider(m) for m in models]
+    arm_list = arm_list or default_arms(len(providers))
+    for spec in arm_list:
+        arm_models(spec, len(providers))  # validate early
 
     est = estimate_usd(tasks, arm_list, providers, prices, rounds, max_out)
     log(spend_preflight(est, confirm_spend=confirm_spend, caps=caps, ledger=ledger))
@@ -120,50 +151,61 @@ def run_experiment(*, models: list[str], arm_list: list[str], benchmark: Path, l
 
     out_dir = out_dir / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
-    results_path = out_dir / "results.jsonl"
-    config = {"run_id": run_id, "models": [mid for _, mid in providers], "arms": arm_list,
-              "rounds": rounds, "seed": seed, "pool": pool, "max_output_tokens": max_out,
-              "benchmark": str(benchmark.relative_to(ROOT)) if benchmark.is_relative_to(ROOT)
-              else str(benchmark), "benchmark_sha256": bench_sha,
-              "evaluator_version": EVALUATOR_VERSION, "template_version": arms_mod.TEMPLATE_VERSION,
-              "isolation_level": ex.isolation_level(), "estimate_usd": round(est, 4),
-              "started": datetime.now(timezone.utc).isoformat(), "n_tasks": len(tasks)}
-    (out_dir / "config.json").write_text(json.dumps(config, indent=1) + "\n")
     rows: list[dict[str, Any]] = []
     aborted = ""
-    with EvaluatorClient(benchmark) as ev, results_path.open("w") as fout:
-        for i, task in enumerate(tasks, 1):
-            order = list(arm_list)
-            random.Random(f"{seed}:{task.id}").shuffle(order)  # A11: per-task random arm order
-            for arm in order:
-                ctx = CallContext(experiment_id=run_id, run_id=run_id, arm=arm, task_id=task.id)
-                spent0 = ledger.committed_usd(task=(run_id, arm, task.id))
-                t0 = time.monotonic()
-                arm_solvers = solvers if arm == "D" else solvers[:1]
-                try:
-                    o = run_arm(arm, task, arm_solvers, ex, ctx, rounds=rounds.get(arm, 0))
-                except BudgetExceeded as e:
-                    aborted = f"{e.level} budget reached: {e}"
+    with EvaluatorClient(benchmark, pool=pool) as ev:
+        info = ev.info()  # the benchmark hash comes from the evaluator, not from hidden files
+        if "error" in info:
+            raise SystemExit(f"evaluator failed to start: {info['error']}")
+        config = {"run_id": run_id, "models": [mid for _, mid in providers], "arms": arm_list,
+                  "rounds": rounds, "seed": seed, "pool": pool, "max_output_tokens": max_out,
+                  "benchmark": str(benchmark.relative_to(ROOT)) if benchmark.is_relative_to(ROOT)
+                  else str(benchmark), "benchmark_sha256": info["benchmark_sha256"],
+                  "evaluator_version": info["evaluator_version"],
+                  "evaluator_code_sha256": info["evaluator_code_sha256"],
+                  "template_version": arms_mod.TEMPLATE_VERSION,
+                  "isolation_level": ex.isolation_level(), "estimate_usd": round(est, 4),
+                  "fingerprint": fingerprint(),
+                  "started": datetime.now(timezone.utc).isoformat(), "n_tasks": len(tasks)}
+        (out_dir / "config.json").write_text(json.dumps(config, indent=1) + "\n")
+        with (out_dir / "results.jsonl").open("w") as fout:
+            for i, task in enumerate(tasks, 1):
+                order = list(arm_list)
+                random.Random(f"{seed}:{task.id}").shuffle(order)  # A11: random arm order per task
+                for spec in order:
+                    letter, _ = arm_parts(spec)
+                    ctx = CallContext(experiment_id=run_id, run_id=run_id, arm=spec, task_id=task.id)
+                    spent0 = ledger.committed_usd(task=(run_id, spec, task.id))
+                    t0 = time.monotonic()
+                    arm_solvers = [solvers[j] for j in arm_models(spec, len(solvers))]
+                    try:
+                        o = run_arm(letter, task, arm_solvers, ex, ctx, rounds=rounds.get(letter, 0))
+                    except BudgetExceeded as e:
+                        aborted = f"{e.level} budget reached: {e}"
+                        break
+                    verdict = ev.evaluate(task.id, o.code, pool)
+                    row = {"run_id": run_id, "task_id": task.id, "category": task.category,
+                           "difficulty": task.difficulty, "arm": spec,
+                           "passed": bool(verdict.get("passed")),
+                           "hidden": f"{verdict.get('n_passed', '?')}/{verdict.get('n_total', '?')}",
+                           "failure": verdict.get("failure", ""),
+                           "visible_pass": o.visible_pass, "model_calls": o.model_calls,
+                           "rounds_used": o.rounds_used, "winner_model": o.winner_model,
+                           "shadow_usd": round(ledger.committed_usd(task=(run_id, spec, task.id))
+                                               - spent0, 6),
+                           "wall_s": round(time.monotonic() - t0, 2), "stopped": o.stopped,
+                           "provider_errors": o.provider_errors,
+                           "eval_error": str(verdict.get("error", ""))[:200], "trace": o.trace,
+                           "code": redact(o.code)}
+                    assert_no_secret(row)
+                    rows.append(row)
+                    fout.write(json.dumps(row) + "\n")
+                    fout.flush()
+                    log(f"[{i}/{len(tasks)}] {task.id:<16} arm {spec}: "
+                        f"{'PASS' if row['passed'] else 'fail'}  calls={o.model_calls} "
+                        f"visible={'ok' if o.visible_pass else 'no'}")
+                if aborted:
                     break
-                verdict = ev.evaluate(task.id, o.code, pool)
-                row = {"run_id": run_id, "task_id": task.id, "category": task.category,
-                       "difficulty": task.difficulty, "arm": arm, "passed": bool(verdict.get("passed")),
-                       "hidden": f"{verdict.get('n_passed', '?')}/{verdict.get('n_total', '?')}",
-                       "visible_pass": o.visible_pass, "model_calls": o.model_calls,
-                       "rounds_used": o.rounds_used, "winner_model": o.winner_model,
-                       "shadow_usd": round(ledger.committed_usd(task=(run_id, arm, task.id)) - spent0, 6),
-                       "wall_s": round(time.monotonic() - t0, 2), "stopped": o.stopped,
-                       "eval_error": verdict.get("error", ""), "trace": o.trace,
-                       "code": redact(o.code)}
-                assert_no_secret(row)
-                rows.append(row)
-                fout.write(json.dumps(row) + "\n")
-                fout.flush()
-                log(f"[{i}/{len(tasks)}] {task.id:<16} arm {arm}: "
-                    f"{'PASS' if row['passed'] else 'fail'}  calls={o.model_calls} "
-                    f"visible={'ok' if o.visible_pass else 'no'}")
-            if aborted:
-                break
     errors = [e for s in solvers for e in s.errors]
     tokens = _token_totals(telemetry, run_id)
     report = render_report(config, rows, tokens, aborted, errors)
@@ -185,51 +227,79 @@ def _token_totals(telemetry: Telemetry, run_id: str) -> dict[str, dict[str, int]
     return out
 
 
+def arm_label(spec: str, models: list[str]) -> str:
+    letter, idx = arm_parts(spec)
+    short = [m.split("/")[-1] for m in models]
+    if letter == "D":
+        return f"{spec} two-model workstation ({' + '.join(short[:2])})"
+    kind = "single shot" if letter == "A" else "execute + repair"
+    return f"{spec} {kind} ({short[idx] if idx < len(short) else '?'})"
+
+
 def render_report(config: dict[str, Any], rows: list[dict[str, Any]],
                   tokens: dict[str, dict[str, int]], aborted: str, errors: list[str]) -> str:
     arms = config["arms"]
+    models = config["models"]
     by_arm: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for r in rows:
         by_arm[r["arm"]].append(r)
-    names = {"A": "A single shot", "C": "C execute + repair", "D": "D two-model workstation"}
+    # Compare only tasks that every arm finished (reviewer #7: equal denominators).
+    done = {tid for tid in {r["task_id"] for r in rows}
+            if all(any(r["task_id"] == tid for r in by_arm[a]) for a in arms)}
     lines = [
         f"# Run {config['run_id']}",
         "",
         "> **Exploratory (M1).** Builder-written seed tasks, one run, no confidence intervals. "
         "This shows the loop works; it is not evidence for H1/H2 (D-018).",
         "",
-        f"- Models: {', '.join(config['models'])}",
+        f"- Models: {', '.join(models)}",
         f"- Tasks: {config['n_tasks']} from `{config['benchmark']}` "
         f"(sha256 {config['benchmark_sha256'][:12]}…), pool {config['pool']}",
         f"- Arms: {', '.join(arms)} · repair rounds {config['rounds']} · max output tokens "
         f"{config['max_output_tokens']}",
         f"- Sandbox {config['isolation_level']} · evaluator {config['evaluator_version']} · "
         f"templates {config['template_version']} · seed {config['seed']}",
+        f"- Compared on the **{len(done)} tasks** that every arm finished.",
     ]
     if aborted:
         lines.append(f"- **Stopped early:** {aborted}")
     lines += ["", "## Results", "",
               "| Arm | Solved | Pass rate | Model calls | Calls/task | Input tok | Output tok | "
-              "Shadow $ | Wall s |", "|---|---|---|---|---|---|---|---|---|"]
+              "Shadow $ | Infra issues* |", "|---|---|---|---|---|---|---|---|---|"]
+    rates = {}
     for arm in arms:
-        rs = by_arm.get(arm, [])
+        rs = [r for r in by_arm.get(arm, []) if r["task_id"] in done]
         n = len(rs)
         solved = sum(r["passed"] for r in rs)
+        rates[arm] = solved / n if n else 0.0
         calls = sum(r["model_calls"] for r in rs)
+        infra = sum(bool(r["eval_error"]) + bool(r["stopped"]) + r.get("provider_errors", 0)
+                    for r in rs)
         tk = tokens.get(arm, {})
         lines.append(
-            f"| {names.get(arm, arm)} | {solved}/{n} | {solved / n:.0%} | {calls} | "
+            f"| {arm_label(arm, models)} | {solved}/{n} | {solved / n:.0%} | {calls} | "
             f"{calls / n:.1f} | {tk.get('input', 0)} | {tk.get('output', 0)} | "
-            f"{sum(r['shadow_usd'] for r in rs):.4f} | {sum(r['wall_s'] for r in rs):.0f} |"
-            if n else f"| {names.get(arm, arm)} | 0/0 | – | 0 | – | 0 | 0 | 0 | 0 |")
-    cats = sorted({r["category"] for r in rows})
+            f"{sum(r['shadow_usd'] for r in rs):.4f} | {infra} |"
+            if n else f"| {arm_label(arm, models)} | 0/0 | – | 0 | – | 0 | 0 | 0 | 0 |")
+    lines += ["", "\\* Infra issues: provider calls that failed after retries, budget stops and "
+              "evaluator errors. Each one also counts as a fail in this table.",
+              "Model calls exclude retried rate-limit errors. Wall time (in results.jsonl) "
+              "includes free-tier pacing and retry waits."]
+    singles = [a for a in arms if arm_parts(a)[0] in "AC"]
+    if "D" in arms and singles and done:
+        best = max(singles, key=lambda a: rates[a])
+        diff = rates["D"] - rates[best]
+        lines += ["", f"**D vs the best single-model arm ({best}):** "
+                      f"{rates['D']:.0%} vs {rates[best]:.0%} ({diff:+.0%}). "
+                      "One exploratory run: not a significant result either way."]
+    cats = sorted({r["category"] for r in rows if r["task_id"] in done})
     if cats:
         lines += ["", "## By category (solved / tasks)", "",
                   "| Category | " + " | ".join(arms) + " |", "|---" * (len(arms) + 1) + "|"]
         for c in cats:
             cells = []
             for arm in arms:
-                rs = [r for r in by_arm.get(arm, []) if r["category"] == c]
+                rs = [r for r in by_arm.get(arm, []) if r["category"] == c and r["task_id"] in done]
                 cells.append(f"{sum(r['passed'] for r in rs)}/{len(rs)}")
             lines.append(f"| {c} | " + " | ".join(cells) + " |")
         lines += ["", "## Per task", "", "| Task | Difficulty | " + " | ".join(arms) + " |",
@@ -250,7 +320,7 @@ def render_report(config: dict[str, Any], rows: list[dict[str, Any]],
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("--models", required=True, help="comma-separated provider:model specs")
-    ap.add_argument("--arms", default="A,C,D")
+    ap.add_argument("--arms", help="e.g. A1,C1,A2,C2,D (default: all arms for the given models)")
     ap.add_argument("--benchmark", default=str(ROOT / "benchmarks" / "seed"))
     ap.add_argument("--limit", type=int)
     ap.add_argument("--tasks", help="comma-separated task ids")
@@ -266,7 +336,8 @@ def main(argv: list[str] | None = None) -> None:
     a = ap.parse_args(argv)
     try:
         r = run_experiment(
-            models=a.models.split(","), arm_list=a.arms.split(","), benchmark=Path(a.benchmark),
+            models=a.models.split(","), arm_list=a.arms.split(",") if a.arms else None,
+            benchmark=Path(a.benchmark),
             limit=a.limit, task_ids=a.tasks.split(",") if a.tasks else None, seed=a.seed,
             confirm_spend=a.confirm_spend, pool=a.pool,
             rounds={"A": 0, "C": a.rounds_c, "D": a.rounds_d}, max_out=a.max_output_tokens,
