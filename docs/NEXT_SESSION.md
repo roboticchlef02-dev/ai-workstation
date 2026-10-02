@@ -1,28 +1,38 @@
 # Next session — start here
 
-**State (2026-10-02):** Gate 0 closed. No Phase 1 / M1 code yet. Branch `claude/dazzling-albattani-l57sv4`, CI green before the last commits.
+**State (2026-10-02, end of session b):** Gate 0 closed. Q12 = yes, Q13 = yes → working in milestones (D-018). **M1 in progress.** Branch `claude/vibrant-bardeen-b9y49d`, CI green on the first M1 push; later pushes not yet checked.
 
-## Ridha: do these before the next session (≈5 min)
-1. **Setup script** (cloud environment menu in the session title bar → Edit → Setup script):
-   ```bash
-   set -e
-   apt-get update && apt-get install -y bubblewrap socat
-   pip install "pydantic>=2.6" "httpx>=0.27" "pyyaml>=6.0" "pytest>=8.0"
-   bwrap --version
-   ```
-2. **Keys** (same Edit screen → environment variables): `GEMINI_API_KEY` and/or `ANTHROPIC_API_KEY`. Never in chat.
-3. **Optional: protect `main`.** Only the working branch exists today. On GitHub, create `main` from this branch and make it the default. Then Settings → Rules → New branch ruleset for `main`:
-   - require a pull request
-   - require status check `ci`
-   - block force pushes
+## Verified this session
+- Setup script works: bwrap 0.9.0, socat, setpriv, deps installed. `detect_env.py` outside the dev sandbox → **L3**.
+- Keys (names only): `GEMINI_API_KEY` set, `ANTHROPIC_API_KEY` unset. The Gemini key is unset inside sandboxed commands (observed).
+- 134 tests pass, 1 live test skipped (no `--confirm-spend`), even with the real key in the environment.
 
-   A solo account can't approve its own PRs. Add yourself to the bypass list so only *you* merge.
-4. Answer **Q12** (which keys/accounts) and **Q13** (milestones) in `docs/QUESTIONS.md`. You can just say "Q12: <keys>, Q13 yes".
+## M1 done so far (tests written first)
+| Piece | Files |
+|---|---|
+| Secret guard: redaction, log formatter, persistence guard, clean child env, git-history scan | `src/aiws/secretguard.py`, `tests/test_secrets.py` |
+| Shadow-cost price table (D-016), caps (env only lowers), reserve/settle SQLite ledger, spend preflight | `configs/prices.yaml`, `configs/budget.yaml`, `src/aiws/{prices,budget}.py`, `tests/test_budget.py` |
+| Provider interface, mock, record/replay, metered call path, call telemetry | `src/aiws/providers/{base,mock,replay}.py`, `src/aiws/{metered,telemetry}.py`, `tests/test_providers.py` |
+| Gemini provider (offline tests; live test gated) | `src/aiws/providers/gemini.py`, `tests/test_gemini.py` |
 
-## Prompt to paste into the new session
-> Read CLAUDE.md, docs/NEXT_SESSION.md, docs/QUESTIONS.md and the latest part of docs/DECISIONS.md. Gate 0 is closed. My answers: Q12 = …, Q13 = …. Verify the setup script worked (`python scripts/detect_env.py`; expect L3) and keys are present (names only). Then start the next step. Stop when the conversation gets long, and update docs/NEXT_SESSION.md before stopping.
+## Ridha: open items
+1. **Q14** (strict sandbox: timing and form), in `docs/QUESTIONS.md`. Default: keep today's mode until the executor exists.
+2. Optional: an `ANTHROPIC_API_KEY` for the second family (Q2/R2). Without it, M1 runs Gemini only.
+3. Still open from before: branch protection for `main` (optional).
+
+## Prompt to paste into the next session
+> Read CLAUDE.md, docs/NEXT_SESSION.md, docs/QUESTIONS.md and the end of docs/DECISIONS.md. Q14 = …. Continue M1. Stop when the conversation gets long, and update docs/NEXT_SESSION.md before stopping.
 
 ## Builder checklist for the next session
-- Verify `bwrap`, pytest, and the L3 probe. If they're OK, enable the strict sandbox (`allowUnsandboxedCommands:false`, `failIfUnavailable:true`, exclude only `git commit`/`git push`), per Q10 and R6.
-- If Q13 = yes, start **M1** with security tests first: secrets never logged; budget caps + reserve/settle + shadow cost (D-016); executor L3-only, non-root, AF_UNIX/setns escape tests; clean child env.
-- Keep each session's work small and committed. Update this file at the end.
+1. Check CI on the last push (`87cf0f0`); fix if red.
+2. **Confirm the Gemini model ID and prices** before any live call: list models (free, no tokens) with an approved unsandboxed command, then fix `configs/prices.yaml` (`verified`) and the provider default. Then one live smoke test only with Ridha's go-ahead: `pytest -m live --confirm-spend tests/test_gemini.py`.
+3. **L3 executor**, security tests first (D-005, D-012, Gate 0 Phase 2 list):
+   - refuses to run below L3 (fail closed)
+   - `setpriv` to an unprivileged uid before bwrap; NPROC enforced (fork bomb contained)
+   - no network; host FS hidden; no AF_UNIX path to host sockets; no setns escape
+   - clean env (`secretguard.child_env`); timeout, memory, file-size limits
+   - records the enforced `isolation_level`
+
+   Nested bwrap hangs inside the dev sandbox (`--unshare-user`), so these tests need the route Ridha picks in Q14.
+4. Then: evaluator process (stdin/stdout JSON, hidden tests), ~40-task seed benchmark, arms A/C/D, report.
+5. Not yet built: retry loop for `retryable` errors, environment fingerprint in telemetry (R1), run-level telemetry records.

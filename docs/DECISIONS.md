@@ -184,3 +184,13 @@ Options:
 - (c) Strict mode; executor tests run only in CI (GitHub runner as root via `sudo`). The builder writes executor code without running it locally. Slower feedback loop; probably 2–4 extra CI rounds.
 
 Recommendation: **(b) until the executor lands, then decide between (a) and (c)** with the executor's real test command in hand. Live runs always need Ridha's explicit go-ahead anyway (`--confirm-spend`). · Risk of (b): the escape hatch stays open, as R6 noted. · PROPOSED (Q14)
+
+**D-020 · 2026-10-02 · M1 builder choices (reversible).**
+- Module `aiws.secretguard`, not `secrets`: avoids the stdlib name and the protected `secrets` path pattern.
+- Tests import from `src/` via pytest `pythonpath` (sandboxed `pip install -e` fails). CI still installs the package.
+- Money is integer micro-USD, rounded up. Shadow cost is priced on the UTC date of the call.
+- `ProviderError.billable` (False / True / None=unknown) decides settlement: False releases the reservation; True or unknown charges the full reservation. `retryable` marks 429/5xx/timeouts (R9: a retry, never a task failure; retry loop comes with the runner).
+- Telemetry stores prompt/response **hashes**, not texts. Texts live in the replay store, which refuses to cache a response that looks like it holds a key.
+- `configs/prices.yaml` and `configs/budget.yaml` are Control plane. They are not yet write-protected in the dev sandbox → added to Q14.
+- Gemini model ID `gemini-3.8-flash` and its prices are still **unverified** (`verified: false`).
+· BUILDER

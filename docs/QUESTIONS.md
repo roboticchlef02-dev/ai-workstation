@@ -12,6 +12,8 @@ Each question gives why it matters and a **recommended default**. Answered quest
 
 The settings file is write-protected and the auto-mode classifier blocks me from changing my own sandbox, so **you** apply the change when you choose. I'll give you the exact JSON.
 
+Also add `configs/budget.yaml` and `configs/prices.yaml` to the protected set (`denyWrite` + `ask`), like `CLAUDE.md`. They hold the spend caps and list prices (D-020).
+
 ---
 
 ## Answered
