@@ -18,6 +18,8 @@ benchmarks/held_out*
 *.sqlite3
 *.db
 replay_cache/
+# Runtime state of the runner (ledger, telemetry, their WAL/SHM journals)
+state/
 
 # --- Python ---
 __pycache__/
