@@ -273,6 +273,6 @@ The first Groq run (Qwen 3.8 27B + gpt-oss-20b) solved 27/27 in every arm: the s
 - **PROPOSED · EVAL verdicts carry pass counts.** The seed evaluator runs in pool `SEED`, which returns hidden pass counts for both splits. The learner only ever reads TRAIN rows; EVAL rows go to the report only. A separate VALIDATION-pool evaluator (pass/fail only) for EVAL is M4 work, when the pools are real.
 
 **D-028 · 2026-10-02 · First live M2 run: settings forced by the Groq free tier.** · BUILDER
-- Groq's free tier allows allam-2-7b **6,000 tokens per minute**, and it counts input + `max_tokens` per request. With 2,048 output tokens, only about 2 calls/min fit, and most calls hit HTTP 429 (retried, never a task failure; R9). The first attempt (`20261002T183041Z-learn-s1`) was stopped after 3 attempts; its partial files are not committed.
+- Groq's free tier allows allam-2-7b **6,000 tokens per minute**, and it counts input + `max_tokens` per request. With 2,048 output tokens, only about 2 calls/min fit, and most calls hit HTTP 429 (retried, never a task failure; R9). The first attempt (`20261002T183041Z-learn-s1`) was stopped after 3 attempts; its partial files are committed for the record and are not analysed.
 - Rerun with `--max-output-tokens 1024 --interval 15` (≈ 3–4 calls/min). M1's allam run used 2,048, so absolute pass rates are not comparable with M1; warm vs cold within the run is.
 - Run: `--strategies single,repair,selftest --per-task 2` on model `groq/allam-2-7b`; `duo` is left out because a one-model duo is only a second sample.

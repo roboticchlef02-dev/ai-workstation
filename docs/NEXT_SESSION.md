@@ -1,39 +1,38 @@
 # Next session — start here
 
-**State (2026-10-02, end of session b):** M1 working loop built, reviewed (fresh-context reviewer: 15 findings, 13 fixed, 2 partly deferred) and run live on free models. **Waiting at the M1 gate** for Ridha. Branch `claude/vibrant-bardeen-b9y49d`. All work committed and pushed.
+**State (2026-10-02, end of session c):** M1 gate closed by Ridha. **M2 (learning) built and tested; first live learning run: see below.** Branch `claude/eloquent-goldberg-17kjla` (fast-forwarded from the M1 branch `claude/vibrant-bardeen-b9y49d`, then M2 on top). All work committed and pushed. CI green on this branch.
 
-## Results so far (details: `docs/gates/GATE-M1.md` §3, `reports/runs/`)
-- Weak 7B (allam-2-7b): execute + repair raised hidden tests passed from 19% to 32%; full solves 2 to 3 of 27.
-- Mid models (Qwen 3.8 27B, gpt-oss-20b): ceiling on 37 seed tasks; the one failure passes the visible examples, so repair can't see it.
-- Two-model arm D: no gain over the best single model yet.
+## Results of this session
+- Live learning run `20261002T183158Z-learn-s1` (allam-2-7b) **in progress** at the time of this commit (18 of 42 TRAIN attempts). Results follow when it finishes.
 
-## What exists (M1)
+## What M2 added (D-027, D-028)
 | Piece | Files |
 |---|---|
-| Secret guard, budget (shadow cost, caps, reserve/settle ledger), fingerprint | `src/aiws/{secretguard,prices,budget,fingerprint}.py`, `configs/{prices,budget}.yaml` |
-| Providers: mock, record/replay, Gemini, OpenAI-compatible (Groq, OpenRouter, OpenCode Zen, local) | `src/aiws/providers/` |
-| Metered call path + telemetry | `src/aiws/{metered,telemetry}.py` |
-| L3 sandbox executor (setpriv + bwrap, per-run uid, subreaper, sized tmpfs, self-probe, fail closed) | `src/aiws/executor.py` |
-| Benchmark + harness + evaluator (separate process, fixed pool, failure categories) | `src/aiws/{benchmark,harness,evaluator}.py`, `benchmarks/seed/` (v0.2, 37 tasks) |
-| Arms A1/C1/A2/C2/D, runner, report (`--rerender`) | `src/aiws/{arms,run}.py` |
+| Strategy DSL v0: YAML data, fixed operators (`CALL_MODEL`, `PARALLEL`, `VERIFY`, `REPAIR`, `FINALIZE`), model slots only, template IDs only, call cap from budget.yaml | `src/aiws/strategy.py`, `strategies/*.yaml`, `tests/test_strategy.py` (55 tests, written first) |
+| Template library (versioned, hashed into every run config) | `src/aiws/templates.py` |
+| Interpreter (fixed selection rule; generated tests untrusted, filtered, sandbox only) | `src/aiws/interpreter.py`, `tests/test_interpreter.py` |
+| M1 arms A/C/D now run as strategy files `single`/`repair`/`duo` (M1 e2e test unchanged and passing) | `src/aiws/arms.py` |
+| New strategy `selftest`: the model writes edge-case tests from the statement; visible examples stay the hard gate | `strategies/selftest.yaml` |
+| Experience log (TRAIN rows only; frozen refuses writes; secret guard) | `src/aiws/experience.py` |
+| Per-category Thompson selector with pooled prior (κ = 2); frozen = greedy, no updates | `src/aiws/selector.py`, `tests/test_learning.py` |
+| Learning runner: TRAIN stream → freeze → EVAL (every option on every task; warm/cold scored paired) + report with McNemar | `src/aiws/learn.py`, `tests/test_learn.py` |
 
-Run: `README.md`. Sandbox tests need root + bwrap, so run them with an approved unsandboxed command and keys stripped:
-`env -u GEMINI_API_KEY -u GROQ_API_KEY -u OPENROUTER_API_KEY -u OPENCODE_API_KEY python -m pytest -q` (224 pass).
-Live run example (Groq is fast; Gemma via Gemini is ~60 s/call):
-`PYTHONPATH=src python -m aiws.run --models groq:qwen/qwen3.8-27b,groq:openai/gpt-oss-20b --confirm-spend`
+Tests: 313 (312 pass at L3; the one failure is Q22, full-clone history scan only). Run them unsandboxed with keys stripped:
+`env -u GEMINI_API_KEY -u GROQ_API_KEY -u OPENROUTER_API_KEY -u OPENCODE_API_KEY python -m pytest -q`
 
-Keys present: GEMINI, GROQ, OPENROUTER (no OpenCode). Network: full access. OpenRouter free models: ~50 requests/day.
+Live learning run (Groq free tier: allam-2-7b is limited to 6,000 tokens/min, so keep output at 1,024 and pace 15 s):
+`PYTHONPATH=src python -m aiws.learn --models groq:allam-2-7b --strategies single,repair,selftest --per-task 2 --max-output-tokens 1024 --interval 15 --confirm-spend`
 
-## Ridha decides (M1 gate)
-1. Close M1 and start **M2** (learning which strategy and model work per task category, warm vs cold), then **M3** (Markdown armor pack, D-022/D-024)?
-2. Optional: send `docs/gates/GATE-M1.md` to ChatGPT/Claude for an external review.
+## Ridha decides
+1. **Q22:** CI history scan flags a placeholder in pushed history. Recommended (a): exempt that one value by hash. (The auto-mode check blocked me from doing it without you.)
+2. M2 gate: after the next session's second run and the fresh-context reviewer.
 
 ## Prompt to paste into the next session
-> Read CLAUDE.md, docs/NEXT_SESSION.md, docs/gates/GATE-M1.md and the end of docs/DECISIONS.md. M1 gate: <close / changes>. Continue with M2. Stop when the conversation gets long, and update docs/NEXT_SESSION.md before stopping.
+> Read CLAUDE.md, docs/NEXT_SESSION.md and the end of docs/DECISIONS.md. Q22: <a / b / c>. Continue M2 and prepare the M2 gate. Stop when the conversation gets long, and update docs/NEXT_SESSION.md before stopping.
 
 ## Builder checklist for the next session
 1. Check CI on the latest push.
-2. If M1 is closed: M2. Candidate first strategy, from the results: **self-generated edge-case tests** (the model writes extra test inputs; only verified ones are used), since visible examples miss traps.
-3. Harder or more varied tasks are still needed for mid models. Weak models (allam-2-7b, small OpenRouter `:free` models) show effects on the current set.
-4. Deferred from the reviewer: cgroup memory/pids caps and a seccomp filter (before running on Ridha's PC); billing tier per provider (only if a paid key ever appears); preregistered infra-failure rules (M4).
-5. Known gaps: the ledger total lives in `state/` (not committed); seed tasks lack a second solution and mutation check (D-025/D-026); evaluator shares the orchestrator's OS user (A10 → M4).
+2. A second live run for variance: same settings, `--seed 2` (and `--split-seed 2` for a different split). If time allows, a second model family on OpenRouter `:free` (≈ 50 requests/day: too few for a full run; use `--limit-train`/`--limit-eval`).
+3. M2 gate packet `docs/gates/GATE-M2.md` with a fresh-context reviewer (PLAN 9). Questions for the reviewer: can a strategy file widen anything; can EVAL outcomes reach the selector; is offline scoring of warm/cold on shared runs fair.
+4. Then M3 (Markdown armor pack: lessons with provenance, D-022/D-024).
+5. Still deferred: cgroup memory/pids caps and seccomp (before Ridha's PC); separate evaluator identity (A10, M4); seed tasks lack a second solution and mutation check (D-025/D-026).

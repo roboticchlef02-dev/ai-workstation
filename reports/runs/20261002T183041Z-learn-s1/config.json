@@ -1,0 +1,104 @@
+{
+ "run_id": "20261002T183041Z-learn-s1",
+ "kind": "learn",
+ "models": [
+  "groq/allam-2-7b"
+ ],
+ "options": [
+  "single@1",
+  "repair@1",
+  "selftest@1"
+ ],
+ "cold": "repair@1",
+ "per_task": 2,
+ "split_seed": 1,
+ "seed": 1,
+ "pool": "SEED",
+ "train_tasks": [
+  "seed-arr-01",
+  "seed-arr-03",
+  "seed-dp-01",
+  "seed-dp-02",
+  "seed-ds-01",
+  "seed-ds-02",
+  "seed-graph-01",
+  "seed-graph-02",
+  "seed-greedy-01",
+  "seed-greedy-03",
+  "seed-hash-01",
+  "seed-hash-03",
+  "seed-num-02",
+  "seed-num-03",
+  "seed-num-05",
+  "seed-rec-02",
+  "seed-sort-02",
+  "seed-sort-03",
+  "seed-str-02",
+  "seed-str-04",
+  "seed-str-05"
+ ],
+ "eval_tasks": [
+  "seed-arr-02",
+  "seed-arr-04",
+  "seed-dp-03",
+  "seed-dp-04",
+  "seed-ds-03",
+  "seed-graph-03",
+  "seed-graph-04",
+  "seed-greedy-02",
+  "seed-hash-02",
+  "seed-hash-04",
+  "seed-num-01",
+  "seed-num-04",
+  "seed-rec-01",
+  "seed-sort-01",
+  "seed-str-01",
+  "seed-str-03"
+ ],
+ "strategies": {
+  "single": {
+   "version": 1,
+   "sha256": "04c0694bf639a0683ecdceb049063ccb86726e5d61f804a39d10aa9815c9b57b"
+  },
+  "repair": {
+   "version": 1,
+   "sha256": "fa28c4d04594177b8985f87aea40b99461842ee388a9b5e19a4e51167cf58f82"
+  },
+  "selftest": {
+   "version": 1,
+   "sha256": "b0a1282bba983f1c0de338b1062f0451cf9dd51ee9834c2e50512797ec900fbc"
+  }
+ },
+ "template_version": "m2-v1",
+ "template_hashes": {
+  "edge_tests": "b5b1ea189d27c350",
+  "repair": "c739ef55f7b69075",
+  "repair_generated": "6f549a6e9189cbcc",
+  "solve": "91396544e10b6851"
+ },
+ "benchmark": "/home/user/ai-workstation/benchmarks/seed",
+ "benchmark_sha256": "2d679503cc901e9bd46abdb5b170598bdde98eed26f911abffb1126aab372b32",
+ "evaluator_version": "0.2.0",
+ "evaluator_code_sha256": "f0aa69ccd1a01b7dde9180cee2226b1e5dcca95ecd60479ec0ec0564ffcd6a6f",
+ "isolation_level": "L3",
+ "max_output_tokens": 2048,
+ "estimate_usd": 0.143,
+ "fingerprint": {
+  "kernel": "6.18.44-fc-v51",
+  "machine": "x86_64",
+  "cpu_count": 4,
+  "ram_gb": 15.7,
+  "python": "3.11.15",
+  "sqlite": "3.45.1",
+  "bwrap": "bubblewrap 0.9.0",
+  "packages": {
+   "pydantic": "2.13.4",
+   "httpx": "0.28.1",
+   "pyyaml": "6.0.1"
+  },
+  "git_commit": "c52fb1ce03355cd8308fbac9ce62cf888f980281",
+  "git_dirty": false,
+  "sha256": "337f095a9a41b6cf74c72b7aa017d6e6eacbb21236348ee4c8bdd4da1f2a8183"
+ },
+ "started": "2026-10-02T18:30:41.530026+00:00"
+}
