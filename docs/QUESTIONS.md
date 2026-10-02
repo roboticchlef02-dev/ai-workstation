@@ -4,25 +4,13 @@ Each question gives why it matters and a **recommended default**. Answered quest
 
 ---
 
-### Q12. Which free / subscription models exactly? *(new)*
-**Why:** you said you may use free or subscription models. That changes how cost is counted (D-016) and which access types are safe (D-017).
-**Default:**
-- A **Gemini API key from Google AI Studio** (free tier) as the first real provider.
-- Optionally an **Anthropic API key** (Haiku 4.5 is ~$0.007 per call). There is no free Anthropic API tier.
-- Budgets counted in list-price "shadow dollars", so free calls still count.
-- Subscription chat apps can't be used. Agent CLIs are deferred.
+### Q14. Strict dev sandbox: when and how? *(new)*
+**Why:** you approved strict mode. But nested bwrap hangs inside the dev sandbox, so strict mode would stop me from running the executor's security tests, the L3 probe and live API calls (D-019).
+**Default: (b)** keep today's mode until the executor exists, then pick (a) or (c):
+- (a) strict + an exception for git and one fixed executor-test command
+- (c) strict; executor tests run only in CI
 
-Tell me which accounts/keys you have. Add keys as environment variables in the cloud environment settings, never in chat. A **new session** picks them up.
-
-### Q13. Switch to small working milestones (M1→M4)? *(new, budget-tight)*
-**Why:** you want something that works soon and improves a little each time. The current plan only gives a result at phase 10.
-**Default: yes.** **M1** = one end-to-end working loop:
-- real models (free tier is fine) solve ~40 tasks
-- code runs in the sandbox, the evaluator scores it
-- 3 arms (single shot, repair, simple 2-model workstation)
-- a cost/accuracy report
-
-Then M2 learning, M3 memory, M4 the full rigorous experiment. Results before M4 are labeled exploratory, so validity isn't compromised. Details: D-018.
+The settings file is write-protected and the auto-mode classifier blocks me from changing my own sandbox, so **you** apply the change when you choose. I'll give you the exact JSON.
 
 ---
 
@@ -41,4 +29,6 @@ Then M2 learning, M3 memory, M4 the full rigorous experiment. Results before M4 
 | Q9 | Done: `env.example`, `.env*` denied everywhere |
 | Q10 | Done: CODEOWNERS + write-protected safety files. **Your action:** branch protection (see `docs/NEXT_SESSION.md`); strict sandbox after Q8 |
 | Q11 | Yes: Q1–Q10 + A8–A12 adopted (A9 as modified by the builder) |
+| Q12 | Yes: Gemini (AI Studio key) first; Anthropic optional (no key yet); shadow-cost budgets (D-016); no chat apps, no agent CLIs (D-017) |
+| Q13 | Yes: milestones M1→M4 (D-018). M1–M3 results are exploratory |
 | — | Claude (chat) review: skipped for Gate 0; ChatGPT only |

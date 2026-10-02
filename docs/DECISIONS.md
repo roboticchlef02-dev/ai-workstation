@@ -146,7 +146,7 @@ With the named candidates, a call (~2k in / 1k out) costs **~$0.007 on Haiku 4.5
 
 **Gate 0 closed 2026-10-02.** Applied: Q9 (`env.example`, `.env*` denied everywhere), Q10 (sandbox `denyWrite` + `ask` on safety files, CODEOWNERS, more credential names unset), A8–A12 approved. Ridha's actions still open: setup script (Q8) and branch protection (see `docs/NEXT_SESSION.md`). Strict sandbox (`allowUnsandboxedCommands:false`, `failIfUnavailable:true`) waits until a fresh session shows the setup script works.
 
-**D-016 · Cost unit = list-price dollars ("shadow cost"), whatever is actually billed.** Ridha may use free tiers or subscriptions, where billed cost ≈ $0. That would break dollar budget-matching (PLAN 5.3) and the spend caps. → Every call is charged its list price from the dated `configs/prices.yaml`; budget matching and caps use that number. Actual billed spend, tokens and calls are reported separately. · Keeps the comparison meaningful at $0 real spend. · PROPOSED (default, Q12)
+**D-016 · Cost unit = list-price dollars ("shadow cost"), whatever is actually billed.** Ridha may use free tiers or subscriptions, where billed cost ≈ $0. That would break dollar budget-matching (PLAN 5.3) and the spend caps. → Every call is charged its list price from the dated `configs/prices.yaml`; budget matching and caps use that number. Actual billed spend, tokens and calls are reported separately. · Keeps the comparison meaningful at $0 real spend. · APPROVED (Q12 yes, 2026-10-02)
 
 **D-017 · Allowed access types.**
 - (1) Paid API keys: yes.
@@ -157,7 +157,7 @@ With the named candidates, a call (~2k in / 1k out) costs **~$0.007 on Haiku 4.5
 - (3) Subscription chat apps (ChatGPT/Claude web): **no**. There is no official programmatic access, and terms risk.
 - (4) Subscription agent CLIs (Claude Code `-p`, Codex, Gemini CLI): **not in v0.1**. They are agents with their own prompts and tools (a confound), they run commands on the host (a security issue), and their versions can't be pinned. Possible later as a separate provider type.
 
-· PROPOSED (Q12)
+· APPROVED (Q12 yes, 2026-10-02)
 
 **D-018 · Re-scope into small working milestones (budget-tight).** The 10-phase plan only produces a result at the end. → Proposed milestones, each ending in something that runs and a short gate:
 - **M1 Working loop:** provider interface + mock/replay + 1–2 real providers (free tier OK), shadow-cost ledger, L3 sandbox executor (security tests first), evaluator process, ~40-task seed benchmark, arms A/C/D, auto report. ≈ PLAN phases 1, 2, 4 and a thin slice of 3 and 5.
@@ -165,4 +165,22 @@ With the named candidates, a call (~2k in / 1k out) costs **~$0.007 on Haiku 4.5
 - **M3 Memory:** lessons with provenance/quarantine (PLAN phase 6).
 - **M4 Real experiment:** full benchmark (300 held-out), prereg, A1/A9/A11, stats.
 
-Laws, sandbox and secrets rules are unchanged from M1. **Validity rule:** M1–M3 results are labeled *exploratory* and never count as H1/H2 evidence. The true held-out set is generated fresh at M4 and never touched before. · Changes PLAN's phase order → PROPOSED (Q13)
+Laws, sandbox and secrets rules are unchanged from M1. **Validity rule:** M1–M3 results are labeled *exploratory* and never count as H1/H2 evidence. The true held-out set is generated fresh at M4 and never touched before. · Changes PLAN's phase order → APPROVED (Q13 yes, 2026-10-02). M1–M4 replace the phase order; PLAN's gates map to milestone gates
+
+## Session 2026-10-02 (b): setup verified, M1 started
+
+**Setup check (Q8).** Fresh container: `bwrap` 0.9.0, `socat`, `setpriv`, pydantic 2.13.4, httpx 0.28.1, pyyaml 6.0.1, pytest 9.1.1. `detect_env.py` **outside** the dev sandbox → **L3** (baseline network reachable; netns blocks it; host FS hidden; env empty; NPROC enforced after privilege drop). Inside the dev sandbox → L1, as expected (nested bwrap hangs). 35/35 tests pass. Keys (names only): `GEMINI_API_KEY` set, `ANTHROPIC_API_KEY` unset. `GEMINI_API_KEY` is **observed unset inside sandboxed commands** (closes reviewer #7's "configured, not observed").
+
+**D-019 · 2026-10-02 · Strict dev sandbox conflicts with M1 executor work. Not enabled; Ridha decides (Q14).**
+Ridha approved strict mode (`allowUnsandboxedCommands:false`, `failIfUnavailable:true`) for after the setup check. The check found:
+- Nested bwrap **hangs inside the dev sandbox** as soon as it uses `--unshare-user` (and `--unshare-all`, which includes it). Plain `bwrap --ro-bind / / true` and `--unshare-pid` work.
+- So in strict mode the builder **cannot run the L3 executor's security tests**, cannot re-measure L3 (`detect_env.py`), and cannot make any live API call (keys are unset in sandboxed commands; D-003). Those are three M1 requirements.
+- Per the docs (`code.claude.com/docs/en/sandboxing`, fetched 2026-10-02): `allowUnsandboxedCommands:false` makes Claude Code ignore `dangerouslyDisableSandbox`; only `excludedCommands` (Bash-rule syntax, e.g. `"git push *"`) run outside. Every command in a chained call must match.
+- The auto-mode classifier also blocked my further research into sandbox config as self-modification. I therefore did **not** edit `.claude/settings.json`.
+
+Options:
+- (a) Strict mode + `excludedCommands` for `git commit *`, `git push *` and one fixed executor test entry point. The executor tests then run unsandboxed. Equivalent in trust to (c) for that command, and auto-approved by pattern.
+- (b) Keep the current mode. Each unsandboxed command (executor tests, L3 probe, live runs) needs an approval, from the classifier in auto mode. This is today's state.
+- (c) Strict mode; executor tests run only in CI (GitHub runner as root via `sudo`). The builder writes executor code without running it locally. Slower feedback loop; probably 2–4 extra CI rounds.
+
+Recommendation: **(b) until the executor lands, then decide between (a) and (c)** with the executor's real test command in hand. Live runs always need Ridha's explicit go-ahead anyway (`--confirm-spend`). · Risk of (b): the escape hatch stays open, as R6 noted. · PROPOSED (Q14)
