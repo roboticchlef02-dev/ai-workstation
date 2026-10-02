@@ -1,42 +1,32 @@
 # Next session — start here
 
-**State (2026-10-02, end of session b):** Gate 0 closed. Q12 = yes, Q13 = yes → working in milestones (D-018). **M1 in progress.** Branch `claude/vibrant-bardeen-b9y49d`, CI green on every M1 code push (through `87cf0f0`).
+**State (2026-10-02, end of session b):** M1 working loop built and running live on free Gemma 4 models. Branch `claude/vibrant-bardeen-b9y49d`.
 
-## Verified this session
-- Setup script works: bwrap 0.9.0, socat, setpriv, deps installed. `detect_env.py` outside the dev sandbox → **L3**.
-- Keys (names only): `GEMINI_API_KEY` set, `ANTHROPIC_API_KEY` unset. The Gemini key is unset inside sandboxed commands (observed).
-- 134 tests pass, 1 live test skipped (no `--confirm-spend`), even with the real key in the environment.
-
-## M1 done so far (tests written first)
+## What exists (M1)
 | Piece | Files |
 |---|---|
-| Secret guard: redaction, log formatter, persistence guard, clean child env, git-history scan | `src/aiws/secretguard.py`, `tests/test_secrets.py` |
-| Shadow-cost price table (D-016), caps (env only lowers), reserve/settle SQLite ledger, spend preflight | `configs/prices.yaml`, `configs/budget.yaml`, `src/aiws/{prices,budget}.py`, `tests/test_budget.py` |
-| Provider interface, mock, record/replay, metered call path, call telemetry | `src/aiws/providers/{base,mock,replay}.py`, `src/aiws/{metered,telemetry}.py`, `tests/test_providers.py` |
-| Gemini provider (offline tests; live test gated) | `src/aiws/providers/gemini.py`, `tests/test_gemini.py` |
-| OpenAI-compatible provider: OpenCode Zen, OpenRouter, Groq, local Ollama/llama.cpp/LM Studio (offline tests) | `src/aiws/providers/openai_compat.py`, `tests/test_openai_compat.py` |
+| Secret guard | `src/aiws/secretguard.py` |
+| Budget: shadow-cost prices, caps, reserve/settle ledger, preflight | `configs/{prices,budget}.yaml`, `src/aiws/{prices,budget}.py` |
+| Providers: mock, record/replay, Gemini, OpenAI-compatible (OpenCode Zen, OpenRouter, Groq, local) | `src/aiws/providers/` |
+| Metered call path + telemetry | `src/aiws/{metered,telemetry}.py` |
+| **L3 sandbox executor** (setpriv + bwrap, per-run uid, rlimits, self-probe, fail closed) | `src/aiws/executor.py` |
+| Benchmark format + harness + **seed benchmark** (27 tasks) | `src/aiws/{benchmark,harness}.py`, `benchmarks/seed/` |
+| **Evaluator** (separate process, hidden tests, manifest check) | `src/aiws/evaluator.py` |
+| **Arms A/C/D**, runner, report | `src/aiws/{arms,run}.py`, `reports/runs/` |
+
+Run: see `README.md`. Sandbox tests need root + bwrap, so run pytest with an approved unsandboxed command, keys stripped:
+`env -u GEMINI_API_KEY -u GROQ_API_KEY -u OPENROUTER_API_KEY -u OPENCODE_API_KEY python -m pytest -q`
 
 ## Ridha: open items
-1. **Network access** (environment menu → Edit → Network access → allowed domains): add `api.groq.com` and `openrouter.ai` (keys already added), plus `opencode.ai` if you add an OpenCode key (`OPENCODE_API_KEY`, optional). Then start a new session.
-2. **Q21:** knowledge as Markdown files (default yes).
-3. Still open from before: branch protection for `main` (optional).
+1. **Network access** (environment menu → Edit → Network access → allowed domains): add `api.groq.com` and `openrouter.ai` (keys already added). Optional: `opencode.ai` + `OPENCODE_API_KEY`. This unlocks cross-family models (Llama, DeepSeek, Qwen…).
+2. Optional: branch protection for `main`.
 
 ## Prompt to paste into the next session
-> Read CLAUDE.md, docs/NEXT_SESSION.md, docs/QUESTIONS.md and the end of docs/DECISIONS.md. Q21 = …. Network access updated: yes/no. Continue M1. Stop when the conversation gets long, and update docs/NEXT_SESSION.md before stopping.
+> Read CLAUDE.md, docs/NEXT_SESSION.md, docs/QUESTIONS.md and the end of docs/DECISIONS.md. Network access updated: yes/no. Continue.
 
 ## Builder checklist for the next session
 1. Check CI on the latest push.
-2. Keys observed this session: Gemini, Groq, OpenRouter set, and hidden inside sandboxed commands. If an OpenCode key appears, verify the same (names only).
-3. **List free models** (Groq, OpenRouter `:free`, Zen `/zen/v1/models`, Gemini; no tokens spent) with approved unsandboxed commands. Add the chosen free models to `configs/prices.yaml`.
-4. **Confirm the Gemini model ID and prices** before any live call: list models (free, no tokens) with an approved unsandboxed command, then fix `configs/prices.yaml` (`verified`) and the provider default. Then one live smoke test only with Ridha's go-ahead: `pytest -m live --confirm-spend tests/test_gemini.py`.
-5. **L3 executor**, security tests first (D-005, D-012, Gate 0 Phase 2 list):
-   - refuses to run below L3 (fail closed)
-   - `setpriv` to an unprivileged uid before bwrap; NPROC enforced (fork bomb contained)
-   - no network; host FS hidden; no AF_UNIX path to host sockets; no setns escape
-   - clean env (`secretguard.child_env`); timeout, memory, file-size limits
-   - records the enforced `isolation_level`
-
-   Nested bwrap hangs inside the dev sandbox (`--unshare-user`). Q14 = (b): run these tests via approved unsandboxed commands for now; pick (a) or (c) once the executor exists.
-6. Then: evaluator process (stdin/stdout JSON, hidden tests), ~40-task seed benchmark, arms A/C/D, report.
-7. Design to keep in mind: **portable knowledge** (D-022): general vs model-scoped memory, ~300-token cap, H4 transfer test (A13, proposed).
-8. Not yet built: retry loop for `retryable` errors, environment fingerprint in telemetry (R1), run-level telemetry records.
+2. Read the latest report in `reports/runs/`. If Groq/OpenRouter are reachable, list their free models (no tokens), add price entries, and run a cross-family D.
+3. **M1 gate** (`docs/gates/GATE-M1.md`) if not written yet: results, deviations, risks, fresh-context reviewer.
+4. Then **M2** (learning: per-category strategy selection, warm vs cold) and **M3** (the Markdown armor pack, D-022/D-024), in that order.
+5. Known gaps: no environment fingerprint in telemetry (R1); the ledger's running total lives in `state/` (not committed), so the global cap resets with each container; seed tasks lack a second independent solution and mutation check (D-025); evaluator shares the orchestrator's OS user (A10 → M4).
