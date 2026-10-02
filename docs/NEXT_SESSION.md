@@ -16,12 +16,12 @@
 | Gemini provider (offline tests; live test gated) | `src/aiws/providers/gemini.py`, `tests/test_gemini.py` |
 
 ## Ridha: open items
-1. **Q14** (strict sandbox: timing and form), in `docs/QUESTIONS.md`. Default: keep today's mode until the executor exists.
-2. Optional: an `ANTHROPIC_API_KEY` for the second family (Q2/R2). Without it, M1 runs Gemini only.
+1. **Q15–Q19** in `docs/QUESTIONS.md` (free providers, local models, OpenCode, coding first, time budget). No paid keys, ever (D-021).
+2. For each free provider you add: put its key in the environment variables and allow its host in Network access.
 3. Still open from before: branch protection for `main` (optional).
 
 ## Prompt to paste into the next session
-> Read CLAUDE.md, docs/NEXT_SESSION.md, docs/QUESTIONS.md and the end of docs/DECISIONS.md. Q14 = …. Continue M1. Stop when the conversation gets long, and update docs/NEXT_SESSION.md before stopping.
+> Read CLAUDE.md, docs/NEXT_SESSION.md, docs/QUESTIONS.md and the end of docs/DECISIONS.md. My answers: Q15 = …, Q16 = …, Q17 = …, Q18 = …, Q19 = …. Continue M1. Stop when the conversation gets long, and update docs/NEXT_SESSION.md before stopping.
 
 ## Builder checklist for the next session
 1. Check CI on the latest push (docs-only since `87cf0f0`, which was green).
@@ -33,6 +33,6 @@
    - clean env (`secretguard.child_env`); timeout, memory, file-size limits
    - records the enforced `isolation_level`
 
-   Nested bwrap hangs inside the dev sandbox (`--unshare-user`), so these tests need the route Ridha picks in Q14.
+   Nested bwrap hangs inside the dev sandbox (`--unshare-user`). Q14 = (b): run these tests via approved unsandboxed commands for now; pick (a) or (c) once the executor exists.
 4. Then: evaluator process (stdin/stdout JSON, hidden tests), ~40-task seed benchmark, arms A/C/D, report.
 5. Not yet built: retry loop for `retryable` errors, environment fingerprint in telemetry (R1), run-level telemetry records.
