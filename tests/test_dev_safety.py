@@ -51,6 +51,17 @@ def test_secret_variants_are_git_ignored(name):
 
 
 @needs_git
+@pytest.mark.parametrize(
+    "name",
+    # Non-directory forms (reviewer finding 5): a file or symlink named like a protected dir.
+    ["secrets", "benchmarks/held_out", "benchmarks/held_out.tar.gz", ".envrc",
+     "credentials.json", "id_rsa", "configs/.env.local"],
+)
+def test_non_directory_forms_are_git_ignored(name):
+    assert _git("check-ignore", "-q", "--no-index", name).returncode == 0, name
+
+
+@needs_git
 def test_env_example_is_not_ignored():
     assert _git("check-ignore", "-q", ".env.example").returncode != 0
 

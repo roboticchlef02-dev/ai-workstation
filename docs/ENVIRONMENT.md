@@ -50,7 +50,7 @@ Probed by hand on 2026-10-02, *before* the Claude Code dev sandbox was switched 
 - **Root outside.** The orchestrator runs as root. The executor must drop privileges (`setpriv`) before entering bwrap, or NPROC limits are silently ignored.
 - **`/usr` is visible read-only** inside the sandbox (interpreter and site-packages). Nothing secret lives there today. Re-check whenever dependencies change.
 - **No CPU-time isolation from the host** beyond rlimit + wall-clock timeout. Timing-based metrics (latency) are noisy on a shared VM.
-- **Not persistent.** Without the setup script, a fresh container has no bwrap, and the executor must fall back to L2 or disable execution.
+- **Not persistent.** Without the setup script, a fresh container has no bwrap, so the executor must **disable execution** (D-012). Raw `detect_env.py` output should be committed with a timestamp at Gate 1, as evidence.
 
 ## Network (cloud environment policy, probed without credentials, $0)
 
@@ -63,10 +63,16 @@ Probed by hand on 2026-10-02, *before* the Claude Code dev sandbox was switched 
 | pypi.org | reachable outside the dev sandbox; **not** from sandboxed commands (see below) |
 | arxiv.org (WebFetch) | blocked |
 
-## Claude Code dev sandbox (protects the repo from the builder)
+### Execution rule (D-012)
+
+Model-generated code may run **only at L3 or above**. L1/L2 leave the host filesystem visible: hidden tests, the experiment DB, and Unix sockets on the shared filesystem. The reviewer saw proxy-like sockets under `/tmp` and `/run` and did not connect to them; a network namespace alone does not block those. L1/L2 are recorded for diagnosis only. Below L3, the executor disables execution (PLAN 6.4).
+
+## Claude Code dev sandbox (reduces accidental access by the builder; not a hard boundary)
+
+> **Honest scope.** This guards against *accidents*, not against a builder determined to bypass it. `allowUnsandboxedCommands` is still at its default, so any command can be retried outside the sandbox. Every such retry needs an approval, which in auto mode comes from the classifier, not from Ridha. Repo files that define the rules (`.gitignore`, `configs/`, `tests/`, CI) are writable from Bash. Hardening is Q10.
 
 - Claude Code **v2.1.287**. Settings syntax checked against the current docs (`code.claude.com/docs/en/sandboxing`, `/permissions`, `/settings-reference`), not guessed.
-- `.claude/settings.json`: `Read`/`Edit` deny rules for `.env` variants, `secrets/`, `benchmarks/held_out/`. Per the docs, `Read` deny rules are also added to the OS sandbox `denyRead`. `sandbox.enabled: true`. Provider key env vars are **unset** in sandboxed commands. Edits to the safety config require approval (`ask`).
+- `.claude/settings.json`: `Read`/`Edit` deny rules for `.env` variants, `secrets/`, `benchmarks/held_out/`. Per the docs, `Read` deny rules are also added to the OS sandbox `denyRead`. `sandbox.enabled: true`. Provider key env vars are *configured* to be unset in sandboxed commands. This is **not yet observed**, because no key is set yet; verify once keys exist, checking names only. The OS-level `.env` deny covers only the repo root `./.env`; nested `.env` files are git-ignored but not read-denied (Q9). Edits to `.claude/settings.json` and `protected_paths.txt` through the Edit tool require approval (`ask`). `sed` from Bash bypasses that for `protected_paths.txt`. `.claude/settings.json` itself is write-protected by the sandbox.
 - The sandbox **took effect live in this session**. Its resolved config was shown to me and lists the protected paths as `denyOnly`.
 - Side effects observed: nested bwrap hangs inside it, so `scripts/detect_env.py` reports a lower level when run sandboxed. The detector is now conservative: network-namespace evidence counts only if the baseline network is reachable. `pip install` from sandboxed commands fails, so dev dependencies must come from the setup script (Q8).
 - What it does **not** cover: Claude Code's own file tools rely on the permission rules, not the OS sandbox. On Linux, wildcard read rules are expanded only to files that exist when the rule loads.

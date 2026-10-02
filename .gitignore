@@ -1,13 +1,19 @@
 # --- Secrets (never commit) ---
+# No trailing slashes: also covers files and symlinks with these names.
 .env
 .env.*
+.envrc
 !.env.example
-secrets/
+secrets
 *.pem
 *.key
+id_rsa*
+id_ed25519*
+credentials.json
 
 # --- Held-out benchmark: never in git, never opened during development ---
-benchmarks/held_out/
+# Covers the directory, a symlink or file of that name, and archives (held_out.tar.gz).
+benchmarks/held_out*
 
 # --- Experiment state / results (decided per phase; see docs/QUESTIONS.md Q7) ---
 *.sqlite

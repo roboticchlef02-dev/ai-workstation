@@ -3,7 +3,8 @@
 Runs only fixed, trusted probe snippets (never model-generated code). Prints JSON.
 Usage: python scripts/detect_env.py
 
-Isolation levels (see docs/ENVIRONMENT.md):
+Isolation levels (see docs/ENVIRONMENT.md). Only L3+ may run model-generated code;
+L1/L2 leave the host filesystem (hidden tests, unix sockets) visible and are diagnostic only.
   L0  no usable isolation -> arbitrary execution must stay disabled
   L1  child process + clean env + temp dir + memory rlimit (no network isolation)
   L2  L1 + network namespace (no network)
@@ -24,6 +25,7 @@ import tempfile
 
 PY = sys.executable
 TIMEOUT = 20
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 NET_PROBE = (
     "import socket\n"
@@ -154,7 +156,8 @@ def detect() -> dict:
             with tempfile.TemporaryDirectory() as wd:
                 os.chmod(wd, 0o777)
                 probe = ("import os\n" + NET_PROBE +
-                         f"print('HOSTFS_VISIBLE' if os.path.exists({os.getcwd()!r}) else 'HOSTFS_HIDDEN')\n"
+                         # Probe the repo's absolute path (not cwd: "/" always exists).
+                         f"print('HOSTFS_VISIBLE' if os.path.exists({REPO_ROOT!r}) else 'HOSTFS_HIDDEN')\n"
                          "print('ENV', sorted(k for k in os.environ if k not in ('PWD','LC_CTYPE')))\n")
                 p["bwrap"] = _run(_bwrap_cmd(wd) + ["--", python_real, "-c", probe]).splitlines()
                 prefix: list[str] = []
