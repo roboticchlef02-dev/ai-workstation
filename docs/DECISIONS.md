@@ -24,8 +24,8 @@ Per the handoff, these count as approved once Ridha hands over the file, which R
 
 ## Phase 0 decisions
 
-**D-001 · 2026-10-02 · ChatGPT's handoff was not received.**
-The prompt says to read "ChatGPT's accompanying handoff". Only `CLAUDE.md`, `PLAN.md` and `HANDOFF_FROM_CLAUDE.md` were provided. → Proceeded with those three; nothing in Phase 0 depends on the missing file. Asked in Q6. · Risk: it may contain requirements not reflected here. · PROPOSED
+**D-001 · 2026-10-02 · ChatGPT's handoff was not received at first.**
+The prompt says to read "ChatGPT's accompanying handoff". Only `CLAUDE.md`, `PLAN.md` and `HANDOFF_FROM_CLAUDE.md` were provided. → Proceeded with those three; nothing in Phase 0 depends on the missing file. Asked in Q6. · **Resolved after Gate 0:** Ridha supplied it, stored as `docs/handoffs/HANDOFF_FROM_CHATGPT.md`. Read in full. Its three threats map to A1–A3 (already logged). Everything else in it repeats `CLAUDE.md`/`PLAN.md` (laws, gate protocol, reviewer instructions, spend rule). **No missed requirement found.**
 
 **D-002 · 2026-10-02 · `.env` deny rules: explicit names, not wildcard + negation.**
 First config used `Read(.env.*)` + `Read(!.env.example)`. The resolved OS sandbox config showed `.env.example` **denied**, and `cat .env.example` returned *Permission denied*: on Linux the glob expands to existing files, and the negation is not carved out at that layer. → Deny `.env`, `.env.local`, `.env.development`, `.env.production`, `.env.test`, `.env.secret` by name. `.gitignore` still ignores all `.env.*` except `.env.example`. Regression test added. · Risk: an unusual name (e.g. `.env.staging`, `.env.bak`, `.envrc`) or a nested `configs/.env.local` is git-ignored but not read-denied. · **Reclassified PROPOSED after the Gate 0 reviewer:** this narrows CLAUDE.md's "deny `.env*`" rule, and CLAUDE.md outranks everything, so it needs Ridha's decision (Q9) rather than a builder call.
@@ -62,7 +62,7 @@ CI (first run) failed `test_nothing_tracked_under_protected_paths`: the prefix c
 
 **D-014 · 2026-10-02 · `live` tests skip unless `--confirm-spend`** (`tests/conftest.py`), even for a bare `pytest` run with keys present. Full spend accounting (estimate, per-run cap, running total, caps in a file the learning plane can't write) is Phase 1. · BUILDER
 
-**D-015 · 2026-10-02 · Conflict: A2 canary set vs PLAN 5.1 "PILOT never reused".** A2 (approved) re-runs a 15–20-task PILOT subset every session. → A2 is a later, approved amendment, so it takes precedence for that subset only. Canary runs are tagged `pool=CANARY` and kept out of the experience log the learning engine reads. Flagged for Ridha's confirmation, no question needed unless Ridha objects. · PROPOSED
+**D-015 · 2026-10-02 · Conflict: A2 canary set vs PLAN 5.1 "PILOT never reused".** A2 (approved) re-runs a 15–20-task PILOT subset every session. → A2 is a later, approved amendment, so it takes precedence for that subset only. Canary runs are tagged `pool=CANARY` and kept out of the experience log the learning engine reads. Flagged for Ridha's confirmation, no question needed unless Ridha objects. · **SUPERSEDED by proposed A11:** a separate CONTROL/SENTINEL set, so PILOT stays never-reused.
 
 ---
 
@@ -87,5 +87,57 @@ Fresh-context reviewer findings (verbatim in `docs/gates/GATE-0.md` §11).
 
 ---
 
+## External review — Gate 0 (ChatGPT)
+
+Source: `docs/external_review/GATE-0-chatgpt.md`. Claude (chat) review: not received yet.
+ChatGPT is a reviewer, not the decision-maker. ACCEPT means **the builder recommends it**. Items that change architecture, permissions or CLAUDE.md wording are binding only once Ridha confirms (Q11).
+
+### Fact checks of the review's claims (2026-10-02)
+
+| Claim | Result |
+|---|---|
+| Claude Haiku 4.5 at $1 / $5 per M tokens, active | **Verified** (Claude API skill, model table cached 2026-09-25). Alias `claude-haiku-4-5`; ChatGPT gave the dated snapshot `claude-haiku-4-5-20251001`. **Prefer the dated ID** (better for A2 immutability). Confirm via the Models API at Phase 1 |
+| Newer Claude models restrict temperature/top_p | **Verified.** Sampling params return 400 on Opus 4.7+/Sonnet 5/Opus 5.5/Fable; Haiku 4.5 still accepts them. Supports A12 |
+| Gemini 3.8 Flash $0.75 / $3.75 intro price until 2026-12-31 | **Reported by secondary sources** (pricing sites/news). Google's page wasn't fetched. Sources say the price **doubles on 2027-01-01**, which matters if runs cross the new year |
+| MemSecBench (arXiv 2607.27080) on persistent memory poisoning | **Exists.** Abstract summary: 310 cases; malicious memory persists in 84.2% of cases; full write→execute chain 50.3%. The "laundering" work has no citation given → **unverified** |
+| Claude Code permissions ≠ OS security boundary | Consistent with the docs I read in Phase 0 |
+
+### Classification
+
+| # | Point | Class | Reason / action |
+|---|---|---|---|
+| R1 | Run in the cloud env + environment fingerprint; abort if it changes | ACCEPT | Fingerprint (kernel, CPU/RAM quota, Python, SQLite, bwrap, package versions) recorded in telemetry from Phase 1. Abort-on-mismatch enforced at Phase 9 |
+| R2 | Anthropic + Gemini; 50/50 generation; cross-family validation; by-generator analysis | ACCEPT | Matches my Q2 option (b). Pilot candidates Haiku 4.5 (dated ID) + Gemini 3.8 Flash, not presumed winners |
+| R3 / A9 | Baseline too weak: best-of-N may use a fixed heterogeneous pool chosen on VALIDATION | ACCEPT, with modification | The core point is right: without it, a win could just mean "two model families beat one". **Modification:** keep B sampling-only (heterogeneous N, selected by visible tests, **no repair**). Let C's single model be chosen on VALIDATION from either family. Adding repair to B would turn B into C and the baseline into a small workstation. Tuning B/C on VALIDATION costs budget; counted in the Gate 3 estimate |
+| R4 / A8 | Reword H1 to "adaptive workstation vs strongest simple non-learning baseline" | ACCEPT | Correct: H1 compares whole systems, so it can't isolate collaboration or verification. S1–S5 cover those as secondary questions |
+| R5 / A10 | Evaluator: separate UID/sandbox, learning plane can't see key, files, environ, memory or results | ACCEPT, DEFER to Phase 2/4 | Same as the internal reviewer's #4. Designed and tested in Phase 2 (identities) and Phase 4 (evaluator) |
+| R6 | Claude Code isn't the security boundary; enforce `allowUnsandboxedCommands=false`, `failIfUnavailable=true` now | ACCEPT principle; DEFER enforcement | Sequencing: `failIfUnavailable` before the setup script (Q8) would block fresh sessions from starting, and strict mode needs `excludedCommands` for `git commit`/`git push` (localhost signing/proxy). It is also a permission-settings change, so I won't make it on a reviewer's word; Ridha confirms in Q11. Order: Q8 → strict settings → verify |
+| R7 | Budget hierarchy (global → experiment → task → call); env vars can only lower caps; persistent atomic ledger; reserve-then-settle for concurrency | ACCEPT, Phase 1 | The reserve-then-settle point is a real race the plan missed. Security tests are written first (CLAUDE.md) |
+| R8 / A11 | Separate 15–20-task CONTROL/SENTINEL set; output hashes are telemetry only | ACCEPT | Supersedes D-015. Generated with the benchmark at Phase 3. Cost: ~20 extra tasks + 2 runs per session |
+| R9 / A11 | Interleave arms per task in a preregistered random balanced order | ACCEPT | Plan gap, agreed. **Addition:** interleaving puts high-call arms (D/E) and low-call arms (A) under the same rate limits. Log 429s/retries per arm, and a rate-limit failure is a re-try, never a task failure |
+| R10 / A12 | Sampling config per provider; record requested vs effective parameters | ACCEPT, Phase 1 | Verified above. "Fix temperatures in config" (PLAN 5.4) becomes "fix the sampling config each model supports" |
+| R11 | Phase 6 adversarial memory tests (poisoning, laundering, false corroboration, tool echo, dormant triggers, Sybil, quarantine flooding) | ACCEPT, DEFER to Phase 6 | Fits the existing memory design; tests written before the memory code |
+| Q1–Q5, Q7–Q10 | ChatGPT's recommended answers | AGREE (recommendation only) | They match my defaults, plus stronger conditions on Q7/Q8/Q10. **Still Ridha's call** → Q11 |
+| Q6 | Resolved | ACCEPT | Handoff received; see D-001 |
+| Phase 2 list | L3-only, fail closed, AF_UNIX and setns tests, per-run isolation, non-root executor, clean child env | ACCEPT | Union of internal reviewer #3/#8 and D-005/D-012. These become Phase 2's first tests |
+
+No points rejected. One modification (A9) and one sequencing deferral (R6).
+
+### New builder finding prompted by the review: the $150 ceiling probably doesn't cover the design
+
+With the named candidates, a call (~2k in / 1k out) costs **~$0.007 on Haiku 4.5** and **~$0.005 on Gemini 3.8 Flash** (~$0.01 after the 2027 price change). My Gate 0 "cheap tier" assumed ~$0.003. ~29k calls → **~$170–230**, before A9 baseline tuning, the CONTROL set and repeats. Thinking/reasoning tokens would add more. **Low confidence** until the pilot. Gate 3 decides: raise the ceiling, or shrink pools/arms (e.g. HELD-OUT 300 → 200 lowers power; see A4). → Q3 updated.
+
+### Proposed amendments (binding only after Ridha confirms, Q11)
+
+| ID | Amendment | Applies at | Status |
+|---|---|---|---|
+| A8 | H1 := "The adaptive workstation improves verified task outcomes over the strongest simple non-learning baseline." No claim that H1 isolates collaboration or verification | Prereg | PROPOSED |
+| A9 | B = fixed heterogeneous best-of-N (mixture, N, selection rule chosen on VALIDATION, frozen; no repair). C's model chosen on VALIDATION from either family. Strongest of A/B/C is the baseline | Phase 4 / prereg | PROPOSED (modified from ChatGPT) |
+| A10 | Evaluator under a separate identity/sandbox; HELD-OUT returns the minimum permitted result; held-out results never enter the learning/memory pipeline | Phase 2/4 | PROPOSED |
+| A11 | Per-task randomized balanced arm order (preregistered seed); CONTROL/SENTINEL set replaces PILOT reuse; drift signal = pass rate + provider metadata | Phase 3/9 | PROPOSED |
+| A12 | Per-provider sampling config; log requested + effective parameters and response metadata | Phase 1 | PROPOSED |
+
+---
+
 ## External review responses
-(None yet. Gate 0 feedback will be classified ACCEPT / REJECT / DEFER here.)
+(Claude (chat) Gate 0 review: pending.)

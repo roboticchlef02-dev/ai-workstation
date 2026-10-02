@@ -23,7 +23,8 @@ Answered questions move to the bottom with the answer and date. I won't ask agai
 **Why:** sets pool sizes, model tier and whether repeats are affordable.
 **Rough estimate before any pilot (low confidence; Gate 3 replaces it with measured numbers):** about 29k model calls across generation, pilot, train, validation (strategy ladder, A/B, learning curve, 2×2) and held-out × 5 arms, which comes to **~$100 with cheap-tier models, ~$650 with mid-tier**, excluding repeats.
 *Inputs:* ~2k input + 1k output tokens per call. Mid-tier ≈ $3 / $15 per M tokens → ~$0.021/call; cheap-tier ≈ ~$0.003/call. Calls: generation ~3.6k, pilot ~1.5k, train + no-learning control ~3k, validation ~14k, held-out ~7.2k (300 tasks × ~24 calls across 5 arms). Prices are not yet verified against a dated price table; that is Phase 1 (`configs/prices.yaml`).
-**Default:** `MAX_RUN_COST_USD = 5`, total hard ceiling **$150** with cheap-tier models, revisited at Gate 3 with pilot data. Nothing paid runs before Gate 3 except benchmark generation at Gate 2, which gets its own estimate and your approval first.
+**Update after external review:** priced with the named candidates (Haiku 4.5 at $1/$5, Gemini 3.8 Flash at $0.75/$3.75, doubling 2027-01-01), the same design comes to **~$170–230**, more than $150, before A9 baseline tuning, the CONTROL set or repeats. See DECISIONS.md.
+**Default:** `MAX_RUN_COST_USD = 5`, total hard ceiling **$150** for now. At Gate 3 you choose between raising it (likely ~$250) and shrinking the design, with measured pilot numbers. Nothing paid runs before Gate 3 except benchmark generation at Gate 2, which gets its own estimate and your approval first.
 
 ### Q4. Can you spot-check ~30 generated tasks, and how much time per gate? *(PLAN §10 Q4)*
 **Why:** the human spot-check is the only non-model check of task clarity and correctness.
@@ -32,10 +33,6 @@ Answered questions move to the bottom with the answer and date. I won't ask agai
 ### Q5. Python-only tasks to start? *(PLAN §10 Q5)*
 **Why:** one language keeps the sandbox, evaluator and test generation simple.
 **Default:** yes, Python only.
-
-### Q6. ChatGPT's handoff was not included. *(new)*
-**Why:** the prompt says to read it. Only `CLAUDE.md`, `PLAN.md` and Claude's handoff arrived.
-**Default:** send it if it exists. Until then I proceed without it; Phase 0 does not depend on it.
 
 ### Q7. Where do held-out tasks and experiment state live? *(new, only matters if Q1 = A)*
 **Why:** the cloud container is wiped when idle, so anything not in git is lost. But held-out tasks in plaintext git can be read by any future session (`git show` bypasses path deny rules). That breaks "held-out never opened during development".
@@ -70,7 +67,26 @@ Once that's in place I'll also set `sandbox.failIfUnavailable: true` so a missin
 
 **Default: (b) now, (a) after Q8.** (b) costs you one click per merge.
 
+### Q11. Do you adopt the reviewed decisions? *(new, after ChatGPT's Gate 0 review)*
+**Why:** ChatGPT recommended answers to Q1–Q10 and amendments A8–A12. They are a reviewer's view; only you can make them binding (precedence rule).
+**Default: yes to all**, with my one change to A9: best-of-N stays *sampling-only*, with no repair step, so it doesn't turn into the repair baseline. Summary:
+- Q1 cloud + environment fingerprint
+- Q2 Anthropic + Gemini, 50/50 generation
+- Q3 $5 / $150 provisional
+- Q4 yes
+- Q5 Python
+- Q7 encrypted storage + separate evaluator identity
+- Q8 fail-closed setup script
+- Q9 `env.example`
+- Q10 CODEOWNERS + branch protection + write-protected safety files, strict sandbox after Q8
+- A8–A12 as in DECISIONS.md
+
+Reply **"Q11 yes"**, or list changes.
+**Also:** is Claude (chat)'s Gate 0 review coming? If not, I'll treat ChatGPT's review as the only external review for Gate 0.
+
 ---
 
 ## Answered
-(none yet)
+
+### Q6. ChatGPT's handoff. *(answered 2026-10-02)*
+Ridha supplied it; saved as `docs/handoffs/HANDOFF_FROM_CHATGPT.md`. Read in full; no missed requirement (D-001).

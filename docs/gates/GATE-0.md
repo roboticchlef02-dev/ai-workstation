@@ -1,5 +1,11 @@
 # GATE 0 — Foundation (2026-10-02)
 
+## 🔄 External review status (updated 2026-10-02)
+- **ChatGPT:** received (`docs/external_review/GATE-0-chatgpt.md`). Every point classified in `DECISIONS.md`: all accepted, A9 modified, strict-sandbox enforcement sequenced after Q8. Facts checked: Haiku 4.5 pricing and the sampling-parameter limits verified; Gemini pricing reported by secondary sources only.
+- **Claude (chat):** pending.
+- **New finding:** with the named models the design costs ~$170–230, more than the $150 ceiling (Q3).
+- **Waiting on Ridha:** **Q11**: adopt the reviewed answers and A8–A12? Still at the gate; no Phase 1 code.
+
 ## ⚡ Decisions Ridha must make (details in `docs/QUESTIONS.md`)
 
 | # | Question | Recommended default |
@@ -9,7 +15,7 @@
 | Q3 | Total budget / `MAX_RUN_COST_USD` | `$5` per run, **$150** total ceiling, revisited at Gate 3 with pilot data |
 | Q4 | Spot-check 30 tasks? Time per gate? | Yes; ~1 h at Gate 2, 15–30 min otherwise |
 | Q5 | Python-only tasks? | Yes |
-| Q6 | ChatGPT's handoff wasn't included | Send it if it exists |
+| Q6 | ~~ChatGPT's handoff~~ | **Answered**: received and read |
 | Q7 | Where held-out tasks live (cloud wipes the disk; plaintext git is readable by every session) | Encrypted in git, key in a file only a separate evaluator user can read |
 | Q8 | Add a setup script (bubblewrap, socat, Python deps) | Yes. Exact lines are in `QUESTIONS.md` |
 | Q9 | `.env` rule conflicts with CLAUDE.md | Rename the template to `env.example`, deny `.env*` everywhere |
